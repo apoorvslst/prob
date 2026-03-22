@@ -1,4 +1,5 @@
 import {User} from '../db/User.js';
+import jwt from 'jsonwebtoken';
 
 const registerUser=async(req,res)=>{
     try{
@@ -16,17 +17,40 @@ const registerUser=async(req,res)=>{
     }
 }
 
-const loginUser=async(req,res)=>{
-    try{
-        const {email,password}=req.body;
+const loginUser = async (req, res) => {
+    try {
+        const { email, password } = req.body;
 
-        const existedUser=await User.findOne({email});
-        if(!existedUser || !(await existedUser.isPasswordCorrect(password))){
-            return res.status(409).json({ message: "Invalid email or password" });
+        // 1. Find user
+        const existedUser = await User.findOne({ email });
+        
+        // 2. Validate password
+        if (!existedUser || !(await existedUser.isPasswordCorrect(password))) {
+            return res.status(401).json({ message: "Invalid email or password" });
         }
-        res.status(200).json({ message: "Login successful", username: existedUser.username });
+
+        // 3. Generate Access Token
+        const accessToken = jwt.sign(
+            { _id: existedUser._id, username: existedUser.username }, // Data inside token
+            process.env.ACCESS_TOKEN_SECRET, 
+            { expiresIn: '1d' } // Token lasts for 1 day
+        );
+
+        // 4. Send token in a secure, hidden cookie
+        const options = {
+            httpOnly: true, // Frontend JS cannot touch this (Prevents XSS)
+            secure: true    // Only works over HTTPS (or localhost)
+        };
+
+        return res
+            .status(200)
+            .cookie("accessToken", accessToken, options) // Set the cookie
+            .json({ 
+                message: "Login successful", 
+                user: { username: existedUser.username, email: existedUser.email } 
+            });
     }
-    catch(error){
+    catch (error) {
         res.status(500).json({ error: error.message });
     }
 }

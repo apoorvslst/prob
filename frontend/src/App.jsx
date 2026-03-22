@@ -5,6 +5,8 @@ import heroImg from './assets/hero.png'
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Create from './pages/Create';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import './App.css'
 
 function App() {
@@ -18,6 +20,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/create" element={<Create />} />
         </Routes>
       </div>
     </Router>
