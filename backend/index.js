@@ -20,7 +20,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 app.use('/api/users',router);
-app.use('/api/users',postrouter);
+app.use('/api/post',postrouter);
 
 connectDB().then(()=>{
     app.listen(8000,()=>{
