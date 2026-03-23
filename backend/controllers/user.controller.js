@@ -61,9 +61,11 @@ const loginUser = async (req, res) => {
 
         // 4. Send token in a secure, hidden cookie
         const options = {
-            httpOnly: true, // Frontend JS cannot touch this (Prevents XSS)
-            secure: true    // Only works over HTTPS (or localhost)
-        };
+    httpOnly: true,
+    secure: false,  
+    sameSite: 'Lax' 
+};
+
 
         return res
             .status(200)
