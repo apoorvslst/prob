@@ -1,10 +1,10 @@
-import message from '../db/Message.js';
+import Message from '../db/Message.js';
 import { Conversation } from '../db/Conversation.js';
 
 export const sendMessage=async(req,res)=>{
 
     try{
-    const message=req.body;
+    const {message}=req.body;
     const {id:receiverId}=req.params;
     const senderId=req.user._id;
 
@@ -18,7 +18,7 @@ export const sendMessage=async(req,res)=>{
             });
         }
 
-        const newMessage = new message({
+        const newMessage = new Message({
             senderId,
             receiverId,
             message,
