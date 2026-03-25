@@ -1,14 +1,14 @@
-import Message from '../db/Message.js';
+import { Message } from '../db/Message.js';
 import { Conversation } from '../db/Conversation.js';
 
-export const sendMessage=async(req,res)=>{
+export const sendMessage = async (req, res) => {
 
-    try{
-    const {message}=req.body;
-    const {id:receiverId}=req.params;
-    const senderId=req.user._id;
+    try {
+        const { message } = req.body;
+        const { id: receiverId } = req.params;
+        const senderId = req.user._id;
 
-    let conversation = await Conversation.findOne({
+        let conversation = await Conversation.findOne({
             participants: { $all: [senderId, receiverId] },
         });
 
@@ -29,7 +29,7 @@ export const sendMessage=async(req,res)=>{
         }
         await Promise.all([conversation.save(), newMessage.save()]);
         const receiverSocketId = req.userSocketMap[receiverId];
-        
+
         // If they are online, send the message directly to them!
         if (receiverSocketId) {
             // io.to(...).emit() sends a message to ONE specific user
@@ -39,7 +39,7 @@ export const sendMessage=async(req,res)=>{
 
         res.status(201).json(newMessage);
     }
-    catch(error){
+    catch (error) {
         console.log("Error in sendMessage controller: ", error.message);
         res.status(500).json({ error: "Internal server error" });
     }

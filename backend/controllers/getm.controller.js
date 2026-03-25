@@ -1,4 +1,4 @@
-import message from '../db/Message.js';
+import { Message } from '../db/Message.js';
 import { Conversation } from '../db/Conversation.js';
 
 export const getMessages = async (req, res) => {
@@ -8,7 +8,7 @@ export const getMessages = async (req, res) => {
 
         const conversation = await Conversation.findOne({
             participants: { $all: [senderId, userToChatId] },
-        }).populate("messages"); 
+        }).populate("messages");
 
         if (!conversation) return res.status(200).json([]);
 
