@@ -28,6 +28,15 @@ export const sendMessage=async(req,res)=>{
             conversation.messages.push(newMessage._id);
         }
         await Promise.all([conversation.save(), newMessage.save()]);
+        const receiverSocketId = req.userSocketMap[receiverId];
+        
+        // If they are online, send the message directly to them!
+        if (receiverSocketId) {
+            // io.to(...).emit() sends a message to ONE specific user
+            req.io.to(receiverSocketId).emit("newMessage", newMessage);
+        }
+        // ----------------------------------------------------
+
         res.status(201).json(newMessage);
     }
     catch(error){

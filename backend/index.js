@@ -28,6 +28,43 @@ const io = new Server(httpServer, {
     }
 });
 
+const userSocketMap = {}; // Format: { userId: socketId }
+
+// 2. THE BRIDGE MIDDLEWARE
+// This makes 'io' and the 'phonebook' available inside any route/controller!
+app.use((req, res, next) => {
+    req.io = io;
+    req.userSocketMap = userSocketMap;
+    next();
+});
+
+// ... your existing app.use(cors...), express.json(), cookie-parser(), routes...
+
+// 3. LISTEN FOR CONNECTIONS & UPDATE PHONEBOOK
+io.on("connection", (socket) => {
+    console.log("🟢 A user connected! Socket ID:", socket.id);
+
+    // When React connects, it will pass the user's database ID
+    const userId = socket.handshake.query.userId;
+    
+    // Add them to the phonebook if they are logged in
+    if (userId && userId !== "undefined") {
+        userSocketMap[userId] = socket.id;
+    }
+
+    // Send the updated list of online users to everyone (great for green "Online" dots)
+    io.emit("getOnlineUsers", Object.keys(userSocketMap));
+
+    // If they disconnect, remove them from the phonebook
+    socket.on("disconnect", () => {
+        console.log("🔴 User disconnected:", socket.id);
+        if (userId) {
+            delete userSocketMap[userId];
+        }
+        io.emit("getOnlineUsers", Object.keys(userSocketMap));
+    });
+});
+
 app.use(cors({
     origin: 'http://localhost:5173', 
     credentials: true
