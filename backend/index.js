@@ -78,17 +78,6 @@ app.use('/api/post',postrouter);
 app.use("/api/messages", messagerouter);
 
 
-//  LISTEN FOR REAL-TIME CONNECTIONS
-io.on("connection", (socket) => {
-    console.log(" A user connected! Socket ID:", socket.id);
-
-    // If they disconnect, log it
-    socket.on("disconnect", () => {
-        console.log(" User disconnected:", socket.id);
-    });
-});
-
-
 
 connectDB().then(()=>{
     httpServer.listen(8000,()=>{

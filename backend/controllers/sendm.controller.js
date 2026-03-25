@@ -18,7 +18,7 @@ export const sendMessage=async(req,res)=>{
             });
         }
 
-        const newMessage = new Message({
+        const newMessage = new message({
             senderId,
             receiverId,
             message,
