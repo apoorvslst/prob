@@ -1,25 +1,25 @@
 import { Comment } from "../db/Comment.js";
-import { post } from "../db/Post.js";
+import { Post } from "../db/Post.js";
 
-export const addComment=async(req,res)=>{
-    try{
-        const {postId}=req.params;
-        const {text}=req.body;
-        const userId=req.user._id;
+export const addComment = async (req, res) => {
+    try {
+        const { postId } = req.params;
+        const { text } = req.body;
+        const userId = req.user._id;
 
         const comment = await Comment.create({
-            post:postId,
-            user:userId,
+            post: postId,
+            user: userId,
             text
         })
 
-        await post.findByIdAndUpdate(postId, {
+        await Post.findByIdAndUpdate(postId, {
             $push: { comments: comment._id }
         });
 
         const populatedComment = await comment.populate("user", "username profilePic");
-        res.status(201).json(populatedComment);
-    }catch(err){
-        res.status(500).json({error:"could not add a comment"});
+        return res.status(201).json(populatedComment);
+    } catch (err) {
+        return res.status(500).json({ error: "could not add a comment" });
     }
 }

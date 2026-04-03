@@ -1,6 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
 
-const postSchema=new Schema({
+const postSchema = new Schema({
     description: {
         type: String,
     },
@@ -13,24 +13,24 @@ const postSchema=new Schema({
             ref: "User"
         }
     ],
-    owner:{
+    owner: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User", 
+        ref: "User",
         required: true
     },
-    comments:[
+    comments: [
         {
             type: Schema.Types.ObjectId,
             ref: "Comment"
         }
     ]
 
-},{timestamps:true});
+}, { timestamps: true });
 
-postSchema.pre('validate', function(next) {
+postSchema.pre('validate', function (next) {
     if (!this.description && !this.photo) {
         this.invalidate('description', 'A post must have either a description or a photo.');
     }
 });
 
-export const post=mongoose.model("Post",postSchema);
+export const Post = mongoose.model("Post", postSchema);

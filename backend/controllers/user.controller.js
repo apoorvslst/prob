@@ -1,16 +1,16 @@
-import {User} from '../db/User.js';
+import { User } from '../db/User.js';
 import jwt from 'jsonwebtoken';
 
 const registerUser = async (req, res) => {
     try {
-        const { username, email, password } = req.body;
+        const { username, fullName, email, password } = req.body;
 
         const existedUser = await User.findOne({ $or: [{ username }, { email }] });
         if (existedUser) {
             return res.status(409).json({ message: "User with email or username already exists" });
         }
 
-        const user = await User.create({ username, email, password });
+        const user = await User.create({ username, fullName, email, password });
 
         // GENERATE THE TOKEN (Same as login)
         const accessToken = jwt.sign(
@@ -30,13 +30,13 @@ const registerUser = async (req, res) => {
         return res
             .status(201)
             .cookie("accessToken", accessToken, options)
-            .json({ 
-                message: "User registered and logged in successfully!", 
-                user: { username: user.username, email: user.email } 
+            .json({
+                message: "User registered and logged in successfully!",
+                user: { username: user.username, email: user.email }
             });
     }
     catch (error) {
-        res.status(500).json({ error: error.message });
+        return res.status(500).json({ error: error.message });
     }
 }
 
@@ -46,7 +46,7 @@ const loginUser = async (req, res) => {
 
         // 1. Find user
         const existedUser = await User.findOne({ email });
-        
+
         // 2. Validate password
         if (!existedUser || !(await existedUser.isPasswordCorrect(password))) {
             return res.status(401).json({ message: "Invalid email or password" });
@@ -55,29 +55,29 @@ const loginUser = async (req, res) => {
         // 3. Generate Access Token
         const accessToken = jwt.sign(
             { _id: existedUser._id, username: existedUser.username }, // Data inside token
-            process.env.ACCESS_TOKEN_SECRET, 
+            process.env.ACCESS_TOKEN_SECRET,
             { expiresIn: '1d' } // Token lasts for 1 day
         );
 
         // 4. Send token in a secure, hidden cookie
         const options = {
-    httpOnly: true,
-    secure: false,  
-    sameSite: 'Lax' 
-};
+            httpOnly: true,
+            secure: false,
+            sameSite: 'Lax'
+        };
 
 
         return res
             .status(200)
             .cookie("accessToken", accessToken, options) // Set the cookie
-            .json({ 
-                message: "Login successful", 
-                user: { username: existedUser.username, email: existedUser.email } 
+            .json({
+                message: "Login successful",
+                user: { username: existedUser.username, email: existedUser.email }
             });
     }
     catch (error) {
-        res.status(500).json({ error: error.message });
+        return res.status(500).json({ error: error.message });
     }
 }
 
-export {registerUser,loginUser};
+export { registerUser, loginUser };

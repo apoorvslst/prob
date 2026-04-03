@@ -1,8 +1,8 @@
-import { post as Post } from "../db/Post.js";
+import { Post } from "../db/Post.js";
 
 export const createPost = async (req, res) => {
     try {
-        const { title, description } = req.body;
+        const { description } = req.body;
         const photoPath = req.file?.path; // Path from Multer
 
         if (!photoPath) {
@@ -10,14 +10,13 @@ export const createPost = async (req, res) => {
         }
 
         const newPost = await Post.create({
-            title,
             description,
             photo: photoPath, // Later, you'll swap this for a Cloudinary URL
             owner: req.user._id // Assumes you have auth middleware
         });
 
-        res.status(201).json({ message: "Post uploaded!", post: newPost });
+        return res.status(201).json({ message: "Post uploaded!", post: newPost });
     } catch (error) {
-        res.status(500).json({ message: "Upload failed", error: error.message });
+        return res.status(500).json({ message: "Upload failed", error: error.message });
     }
 };
