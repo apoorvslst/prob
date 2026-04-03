@@ -8,6 +8,10 @@ export const sendMessage = async (req, res) => {
         const { id: receiverId } = req.params;
         const senderId = req.user._id;
 
+        if (!message || !message.trim()) {
+            return res.status(400).json({ error: "Message content cannot be empty" });
+        }
+
         let conversation = await Conversation.findOne({
             participants: { $all: [senderId, receiverId] },
         });
