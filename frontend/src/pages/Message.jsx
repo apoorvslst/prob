@@ -8,13 +8,13 @@ const Message = ({ authUser, socket }) => {
     // --- STATE ---
     const [messages, setMessages] = useState([]);
     const [inputText, setInputText] = useState("");
-    
+
     // Hardcoded for UI testing based on your screenshot. 
     const [selectedUser, setSelectedUser] = useState({
-        _id: "replace_with_meghraj_id", 
+        _id: "replace_with_meghraj_id",
         username: "meghraj609_",
         fullName: "Meghraj Soni",
-        profilePic: "https://via.placeholder.com/150" 
+        profilePic: "https://via.placeholder.com/150"
     });
 
     const messagesEndRef = useRef(null);
@@ -22,13 +22,13 @@ const Message = ({ authUser, socket }) => {
     // Sidebar navigation items
     const navItems = [
         { name: 'Home', path: '/' },
-        { name: 'Search', path: '#'},
+        { name: 'Search', path: '#' },
         { name: 'Explore', path: '#' },
-        { name: 'Reels', path: '#', icon: '🎬' },
+        { name: 'Reels', path: '#' },
         { name: 'Messages', path: '/messages' },
         { name: 'Notifications', path: '#' },
         { name: 'Create', path: '/create' },
-        { name: 'Profile', path: '#'},
+        { name: 'Profile', path: '#' },
     ];
 
     // --- 1. AUTO-SCROLL TO BOTTOM ---
@@ -39,7 +39,7 @@ const Message = ({ authUser, socket }) => {
     // --- 2. FETCH MESSAGE HISTORY ---
     useEffect(() => {
         if (!selectedUser) return;
-        
+
         const fetchMessages = async () => {
             try {
                 const res = await axios.get(`/api/messages/${selectedUser._id}`, {
@@ -73,12 +73,12 @@ const Message = ({ authUser, socket }) => {
         if (!inputText.trim() || !selectedUser) return;
 
         try {
-            const res = await axios.post(`/api/messages/send/${selectedUser._id}`, 
+            const res = await axios.post(`/api/messages/send/${selectedUser._id}`,
                 { message: inputText },
                 { withCredentials: true }
             );
             setMessages((prev) => [...prev, res.data]);
-            setInputText(""); 
+            setInputText("");
         } catch (error) {
             console.error("Failed to send message:", error);
         }
@@ -86,7 +86,7 @@ const Message = ({ authUser, socket }) => {
 
     return (
         <div className="flex h-screen bg-black text-white overflow-hidden font-sans">
-            
+
             {/* COLUMN 1: MAIN NAVIGATION SIDEBAR (Your Navbar) */}
             <div className="hidden md:flex flex-col w-[244px] border-r border-[#262626] p-4 justify-between h-full shrink-0">
                 <div>
@@ -97,9 +97,9 @@ const Message = ({ authUser, socket }) => {
                         {navItems.map((item, index) => {
                             const isActive = location.pathname === item.path || (item.name === 'Messages' && location.pathname.includes('messages'));
                             return (
-                                <Link 
-                                    key={index} 
-                                    to={item.path} 
+                                <Link
+                                    key={index}
+                                    to={item.path}
                                     className={`flex items-center gap-4 p-3 rounded-lg hover:bg-neutral-900 transition-all duration-200 group ${isActive ? 'font-bold' : ''}`}
                                 >
                                     <span className="text-xl group-hover:scale-110 transition-transform">{item.icon}</span>
@@ -149,7 +149,7 @@ const Message = ({ authUser, socket }) => {
 
             {/* COLUMN 3: ACTIVE CHAT WINDOW */}
             <div className="flex-1 flex flex-col bg-black relative">
-                
+
                 {/* Chat Header */}
                 <div className="h-[75px] border-b border-[#262626] flex items-center justify-between px-6">
                     <div className="flex items-center gap-3 cursor-pointer">
@@ -159,7 +159,7 @@ const Message = ({ authUser, socket }) => {
                             <span className="text-[11px] text-[#A8A8A8]">{selectedUser.username}</span>
                         </div>
                     </div>
-                    
+
                     <div className="flex gap-4 items-center">
                         <span className="cursor-pointer">📞</span>
                         <span className="cursor-pointer">📹</span>
@@ -186,9 +186,9 @@ const Message = ({ authUser, socket }) => {
                 <div className="p-6 pt-0">
                     <form onSubmit={handleSendMessage} className="flex items-center border border-[#363636] bg-black rounded-full px-4 py-2">
                         <span className="mr-3 cursor-pointer">😊</span>
-                        <input 
-                            type="text" 
-                            placeholder="Message..." 
+                        <input
+                            type="text"
+                            placeholder="Message..."
                             className="flex-1 bg-transparent border-none outline-none text-sm text-white placeholder-[#A8A8A8]"
                             value={inputText}
                             onChange={(e) => setInputText(e.target.value)}

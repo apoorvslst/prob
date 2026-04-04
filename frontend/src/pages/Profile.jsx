@@ -28,23 +28,27 @@ const Profile = () => {
         try {
             console.log(`Fetching profile for: ${username}`);
             
-            // FLAG-A SOLVED: Fetch from actual backend endpoint
-            // Note: Update URL standard 'http://localhost:5000' to match your setup exactly
-            const res = await axios.get(`http://localhost:5000/api/profile/${username}`, {
-                withCredentials: true // Required to automatically send your HttpOnly JWT cookies!
+            const res = await axios.get(`http://localhost:8000/api/profile/${username}`, {
+                withCredentials: true
             });
 
-            // The backend returns the User object. Map it securely to what UI expects:
+            const loggedInUserStr = localStorage.getItem("user");
+            const loggedInUser = loggedInUserStr ? JSON.parse(loggedInUserStr) : null;
+            const currentUserId = loggedInUser?._id;
+
             setProfileData({
-                ...res.data, // Merges username, fullName, profilePic, bio, link
+                ...res.data,
                 followersCount: res.data.followers?.length || 0,
                 followingCount: res.data.following?.length || 0,
-                postsCount: res.data.posts?.length || 0 // (Will be 0 until you aggregate posts from the DB)
+                postsCount: res.data.posts?.length || 0
             });
 
-            // TODO: To make this dynamic, compare incoming user ID against your Global Auth State (Context/Redux)
-            // setIsOwnProfile(currentUser._id === res.data._id);
-            setIsOwnProfile(true); // Keeping true so you can use the 'Edit' testing button!
+            if (currentUserId) {
+                setIsOwnProfile(currentUserId === res.data._id);
+                setIsFollowing(res.data.followers?.includes(currentUserId));
+            } else {
+                setIsOwnProfile(true); // Fallback for testing
+            }
 
         } catch (error) {
             console.error("Failed to load profile", error);
@@ -54,7 +58,10 @@ const Profile = () => {
     const handleUpdateProfile = async (e) => {
         e.preventDefault();
         try {
-            // TODO: axios.put('/api/profile/update', editForm)
+            const res = await axios.put(`http://localhost:8000/api/profile/update/me`, editForm, {
+                withCredentials: true
+            });
+
             setProfileData(prev => ({ ...prev, ...editForm }));
             setIsEditModalOpen(false);
         } catch (error) {
@@ -64,7 +71,10 @@ const Profile = () => {
 
     const handleToggleFollow = async () => {
         try {
-            // TODO: axios.post(`/api/profile/follow/${profileData._id}`)
+            const res = await axios.post(`http://localhost:8000/api/profile/follow/${profileData._id}`, {}, {
+                withCredentials: true
+            });
+            
             setIsFollowing(!isFollowing);
             setProfileData(prev => ({
                 ...prev,
@@ -77,12 +87,23 @@ const Profile = () => {
 
     const fetchUserPosts = async () => {
         try {
-            // Dummy Images
-            setPosts([
-                { _id: '1', photo: 'https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?auto=format&fit=crop&w=800&q=80', likes: 120, comments: 15 },
-                { _id: '2', photo: 'https://images.unsplash.com/photo-1682687982501-1e58f8147610?auto=format&fit=crop&w=800&q=80', likes: 300, comments: 24 },
-                { _id: '3', photo: 'https://images.unsplash.com/photo-1682687220063-4742bd7fd538?auto=format&fit=crop&w=800&q=80', likes: 45, comments: 2 }
-            ]);
+            if (!profileData?._id) return;
+            const res = await axios.get(`http://localhost:8000/api/profile/posts/${profileData._id}`, {
+                withCredentials: true
+            });
+            
+            const formattedPosts = res.data.map(post => ({
+                ...post,
+                photo: post.photo || post.image || 'https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?auto=format&fit=crop&w=800&q=80',
+                likes: post.likes?.length || 0,
+                comments: post.comments?.length || 0
+            }));
+
+            setPosts(formattedPosts);
+            setProfileData(prev => ({
+                ...prev,
+                postsCount: formattedPosts.length
+            }));
         } catch (error) {
             console.error("Failed to fetch posts", error);
         }
