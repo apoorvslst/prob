@@ -1,0 +1,24 @@
+# Ignore Node Modules
+node_modules/
+
+# Ignore Environment variables
+.env
+.env.*
+
+# Ignore logs
+*.log
+npm-debug.log*
+
+# Ignore Documentation / Non-code files
+*implementation*plan*
+*.md
+!README.md
+
+# Ignore OS generated files
+.DS_Store
+
+# Ignore Editor files
+.vscode/
+.idea/
+*.swp
+*.swo

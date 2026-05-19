@@ -37,10 +37,13 @@ export const sendFriendRequest = async (req, res) => {
                 receiver: receiver,
                 status: 'pending'
             })
-            res.status(201).json({ message: "Request sent!", newreq });
+            return res.status(201).json({ message: "Request sent!", newreq });
+        }
+        else{
+            return res.status(400).json({ message: "Request already sent!" });
         }
     }
     catch (error) {
-        res.status(500).json({ error: "Could not send the request" });
+        return res.status(500).json({ error: "Could not send the request" });
     }
 }
