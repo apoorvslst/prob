@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
-const Register = () => {
+const Register = ({ setAuthUser }) => {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -17,8 +19,10 @@ const Register = () => {
         try {
             // Replace with your actual backend URL
             const response = await axios.post('http://localhost:8000/api/users/register', formData);
-            alert("Registration Successful!");
-            console.log(response.data);
+            
+            localStorage.setItem("user", JSON.stringify(response.data.user));
+            setAuthUser(response.data.user);
+            navigate("/");
         } catch (error) {
             console.error("Error registering user:", error.response?.data || error.message);
             alert("Registration Failed!");

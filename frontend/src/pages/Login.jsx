@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
-const Login = () => {
+const Login = ({ setAuthUser }) => {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         email: '',
         password: ''
@@ -16,8 +18,11 @@ const Login = () => {
         try {
             // Replace with your actual backend URL or just '/api/users/login' if using proxy
             const response = await axios.post('http://localhost:8000/api/users/login', formData);
-            alert("Login Successful!");
-            console.log(response.data);
+            
+            // Save user data to localStorage and update global state
+            localStorage.setItem("user", JSON.stringify(response.data.user));
+            setAuthUser(response.data.user);
+            navigate("/");
         } catch (error) {
             console.error("Error logging in user:", error.response?.data || error.message);
             alert("Login Failed!");

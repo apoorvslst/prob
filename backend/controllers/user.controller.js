@@ -80,4 +80,16 @@ const loginUser = async (req, res) => {
     }
 }
 
-export { registerUser, loginUser };
+const getUsersForSidebar=async (req,res)=>{
+    try{
+        const currentUserId = req.user._id;
+        const users=await User.find({_id : {$ne:currentUserId}}).select("-password");
+        return res.status(200).json(users);
+ 
+    }
+    catch(error){
+        return res.status(500).json({error: error.message});
+    }
+}
+
+export { registerUser, loginUser ,getUsersForSidebar};

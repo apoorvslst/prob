@@ -39,7 +39,8 @@ const Create = () => {
 
         try {
             const response = await axios.post('/api/post/upload', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
+                headers: { 'Content-Type': 'multipart/form-data' },
+                withCredentials: true,
             });
             alert("Post created successfully!");
             // Reset form
