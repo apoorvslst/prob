@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const Profile = () => {
     const { username } = useParams();
+    const navigate = useNavigate();
 
     // ----------------------------------------------------
     // STATE MANAGEMENT
@@ -28,7 +29,7 @@ const Profile = () => {
         try {
             console.log(`Fetching profile for: ${username}`);
             
-            const res = await axios.get(`http://localhost:8000/api/profile/${username}`, {
+            const res = await axios.get(`/api/users/profile/${username}`, {
                 withCredentials: true
             });
 
@@ -45,9 +46,7 @@ const Profile = () => {
 
             if (currentUserId) {
                 setIsOwnProfile(currentUserId === res.data._id);
-                setIsFollowing(res.data.followers?.includes(currentUserId));
-            } else {
-                setIsOwnProfile(true); // Fallback for testing
+                setIsFollowing(res.data.followers?.some(id => id.toString() === currentUserId));
             }
 
         } catch (error) {
@@ -58,7 +57,7 @@ const Profile = () => {
     const handleUpdateProfile = async (e) => {
         e.preventDefault();
         try {
-            const res = await axios.put(`http://localhost:8000/api/profile/update/me`, editForm, {
+            const res = await axios.put(`/api/users/profile/update/me`, editForm, {
                 withCredentials: true
             });
 
@@ -71,7 +70,7 @@ const Profile = () => {
 
     const handleToggleFollow = async () => {
         try {
-            const res = await axios.post(`http://localhost:8000/api/profile/follow/${profileData._id}`, {}, {
+            const res = await axios.post(`/api/users/profile/follow/${profileData._id}`, {}, {
                 withCredentials: true
             });
             
@@ -81,14 +80,14 @@ const Profile = () => {
                 followersCount: isFollowing ? prev.followersCount - 1 : prev.followersCount + 1
             }));
         } catch (error) {
-            console.error("Failed to toggle follow", error);
+            console.error("Failed to toggle follow:", error.response?.data || error.message);
         }
     };
 
     const fetchUserPosts = async () => {
         try {
             if (!profileData?._id) return;
-            const res = await axios.get(`http://localhost:8000/api/profile/posts/${profileData._id}`, {
+            const res = await axios.get(`/api/users/profile/posts/${profileData._id}`, {
                 withCredentials: true
             });
             
@@ -186,7 +185,10 @@ const Profile = () => {
                                         <button onClick={handleToggleFollow} className={`px-6 py-1.5 text-sm font-semibold rounded-lg transition-all shadow-lg ${isFollowing ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-blue-500/30'}`}>
                                             {isFollowing ? 'Following' : 'Follow'}
                                         </button>
-                                        <button className="px-5 py-1.5 bg-white/10 hover:bg-white/20 text-white text-sm font-semibold rounded-lg backdrop-blur-md transition-all">
+                                        <button 
+                                            onClick={() => navigate('/message', { state: { selectedUser: profileData } })}
+                                            className="px-5 py-1.5 bg-white/10 hover:bg-white/20 text-white text-sm font-semibold rounded-lg backdrop-blur-md transition-all"
+                                        >
                                             Message
                                         </button>
                                     </>

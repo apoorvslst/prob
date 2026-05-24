@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import {useNavigate} from 'react-router-dom';
 
-const Search = () => {
+const Search = ({ authUser }) => {
     // ----------------------------------------------------
     // STATE MANAGEMENT
     // ----------------------------------------------------
     const [searchQuery, setSearchQuery] = useState('');
     const [results, setResults] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const navigate = useNavigate();
+
 
     // ----------------------------------------------------
     // API PLACEHOLDERS (Practice Area!)
@@ -15,39 +18,7 @@ const Search = () => {
 
     const handleSearch = async (e) => {
         e.preventDefault();
-        if (!searchQuery.trim()) return;
-
-        setIsLoading(true);
-        try {
-            console.log(`Searching for: ${searchQuery}`);
-
-            // =========================================================
-            // TODO 1: Fetch Search Results from Backend
-            // =========================================================
-            // Hint: Use axios.get(`http://localhost:8000/api/users/search?query=${searchQuery}`, { withCredentials: true })
-            //
-            // const res = await axios.get( ... );
-            // setResults(res.data);
-
-            const res = await axios.get(`http://localhost:8000/api/search/${searchQuery}`, {
-                withCredentials: true
-            });
-            setResults(res.data);
-
-            // Dummy Data to test UI until you connect the backend:
-            setTimeout(() => {
-                setResults([
-                    { _id: '101', username: 'john_doe', fullName: 'John Doe', profilePic: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' },
-                    { _id: '102', username: 'jane_smith', fullName: 'Jane Smith', profilePic: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80' },
-                    { _id: '103', username: 'mike_jones', fullName: 'Mike Jones', profilePic: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&w=150&q=80' }
-                ]);
-                setIsLoading(false);
-            }, 800);
-
-        } catch (error) {
-            console.error("Failed to search users", error);
-            setIsLoading(false);
-        }
+        // Search logic is now handled by the dynamic useEffect below
     };
 
     const handleFollow = async (userId) => {
@@ -57,22 +28,50 @@ const Search = () => {
             // =========================================================
             // TODO 2: Follow User using Backend
             // =========================================================
-            // Hint: This is the exact same endpoint used in Profile.jsx!
-            const res = await axios.post(`http://localhost:8000/api/profile/follow/${userId}`, {}, {
+            // Consistency is key: keep using the proxy path
+            const res = await axios.post(`/api/users/profile/follow/${userId}`, {}, {
                 withCredentials: true
             });
-            alert("Successfully Followed!");
+            
+            // Update local state so the button flips to 'Following' or 'Follow' immediately
+            setResults(prevResults => prevResults.map(user => {
+                if (user._id === userId && authUser) {
+                    const isNowFollowing = res.data.message === "Followed";
+                    const updatedFollowers = isNowFollowing 
+                        ? [...(user.followers || []), authUser._id]
+                        : (user.followers || []).filter(id => id !== authUser._id);
+                    return { ...user, followers: updatedFollowers };
+                }
+                return user;
+            }));
 
         } catch (error) {
             console.error("Failed to follow", error);
         }
     };
 
-    // Auto-search if query is cleared
+    // Dynamic Search with Debouncing: Triggers 400ms after you stop typing
     useEffect(() => {
-        if (searchQuery === '') {
-            setResults([]);
-        }
+        const delayDebounceFn = setTimeout(async () => {
+            if (!searchQuery.trim()) {
+                setResults([]);
+                return;
+            }
+
+            setIsLoading(true);
+            try {
+                const res = await axios.get(`/api/users/search?query=${searchQuery}`, {
+                    withCredentials: true,
+                });
+                setResults(res.data);
+            } catch (error) {
+                console.error("Failed to search users", error);
+            } finally {
+                setIsLoading(false);
+            }
+        }, 400); 
+
+        return () => clearTimeout(delayDebounceFn);
     }, [searchQuery]);
 
     return (
@@ -109,7 +108,7 @@ const Search = () => {
                         <div className="text-center text-gray-500 py-10 animate-pulse">Searching...</div>
                     ) : results.length > 0 ? (
                         results.map((user) => (
-                            <div key={user._id} className="bg-[#141414] border border-white/5 rounded-2xl p-4 flex items-center justify-between hover:bg-[#1a1a1a] transition-colors cursor-pointer group">
+                            <div onClick={() => navigate(`/profile/${user.username}`)} key={user._id} className="bg-[#141414] border border-white/5 rounded-2xl p-4 flex items-center justify-between hover:bg-[#1a1a1a] transition-colors cursor-pointer group">
 
                                 <div className="flex items-center gap-4">
                                     <div className="w-14 h-14 rounded-full p-0.5 bg-gradient-to-tr from-gray-700 to-gray-500 overflow-hidden group-hover:from-blue-500 group-hover:to-fuchsia-600 transition-all duration-300">
@@ -125,15 +124,21 @@ const Search = () => {
                                     </div>
                                 </div>
 
+                                {authUser && user._id !== authUser._id && (
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation(); // Prevents the block click
                                         handleFollow(user._id);
                                     }}
-                                    className="px-5 py-2 text-xs md:text-sm font-semibold rounded-lg bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all border border-white/5"
+                                    className={`px-5 py-2 text-xs md:text-sm font-semibold rounded-lg transition-all border border-white/5 ${
+                                        user.followers?.some(id => id.toString() === authUser._id) 
+                                        ? 'bg-white/10 hover:bg-white/20 text-white' 
+                                        : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20'
+                                    }`}
                                 >
-                                    Follow
+                                    {user.followers?.some(id => id.toString() === authUser._id) ? 'Following' : 'Follow'}
                                 </button>
+                                )}
 
                             </div>
                         ))

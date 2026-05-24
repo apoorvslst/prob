@@ -14,7 +14,7 @@ export const getFeedPost = async (req, res) => {
             owner: {
                 $in: following,
             }
-        }).sort({ createdAt: -1 }).populate("owner", "username profilePic fullname");
+        }).sort({ createdAt: -1 }).populate("owner", "username profilePic fullName");
         res.status(200).json(feedPosts);
     }
     catch (error) {

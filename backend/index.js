@@ -7,18 +7,18 @@ import cors from 'cors';
 import connectDB from "./db/index.js";
 import cookieParser from 'cookie-parser';
 import { createServer } from 'http'; 
-import { Server } from 'socket.io';
-
-
+import { Server } from 'socket.io'; 
 
 dotenv.config();
-
 
 const app=express();
 const PORT=8000;
 
 // CREATE THE EXPLICIT HTTP SERVER
 const httpServer = createServer(app);
+
+// Serve static files from the 'public/uploads' directory
+app.use('/uploads', express.static('public/uploads'));
 
 // ATTACH SOCKET.IO TO THAT SERVER
 const io = new Server(httpServer, {
@@ -73,7 +73,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-app.use('/api/users',router);
+app.use('/api/users', router); // Keep this line as is, but read the important note below
 app.use('/api/post',postrouter);
 app.use("/api/messages", messagerouter);
 

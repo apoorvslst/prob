@@ -17,7 +17,7 @@ const Home = ({ authUser }) => {
   useEffect(() => {
     const fetchFeed = async () => {
       try {
-        const res = await axios.get('http://localhost:8000/api/post/feed', {
+        const res = await axios.get('/api/post/feed', {
           withCredentials: true
         });
         setPosts(res.data);
@@ -31,7 +31,7 @@ const Home = ({ authUser }) => {
   // The Magic Like Function
   const handleLike = async (postId) => {
     try {
-      const res = await axios.post(`http://localhost:8000/api/post/like/${postId}`, {}, {
+      const res = await axios.post(`/api/post/like/${postId}`, {}, {
         withCredentials: true
       });
       
@@ -47,40 +47,8 @@ const Home = ({ authUser }) => {
     }
   };
 
-  const navItems = [
-    { name: 'Home', path: '/' },
-    { name: 'Search', path: '/search' },
-    { name: 'Explore', path: '#' },
-    { name: 'Reels', path: '#' },
-    { name: 'Messages', path: '/message' },
-    { name: 'Notifications', path: '#' },
-    { name: 'Create', path: '/create' },
-    { name: 'Profile', path: `/profile/${authUser?.username}` },
-  ];
-
   return (
-    <div className="flex h-screen bg-black text-white font-sans overflow-hidden">
-      
-      {/* 1. SIDEBAR */}
-      <div className="hidden md:flex flex-col w-[244px] border-r border-neutral-800 p-4 justify-between h-full shrink-0">
-        <div>
-          <div className="mb-8 mt-4 px-2">
-            <h1 className="text-xl font-bold tracking-wider italic font-serif">Instagram</h1>
-          </div>
-          <nav className="space-y-2">
-            {navItems.map((item, index) => (
-              <Link 
-                key={index} 
-                to={item.path} 
-                className={`flex items-center gap-4 p-3 rounded-lg hover:bg-neutral-900 transition-all duration-200 group ${item.name === 'Home' ? 'font-bold' : ''}`}
-              >
-                <span className="text-[15px]">{item.name}</span>
-              </Link>
-            ))}
-          </nav>
-        </div>
-      </div>
-
+    <div className="flex h-screen font-sans overflow-hidden">
       {/* 2. MAIN FEED */}
       <div className="flex-1 overflow-y-auto flex justify-center scrollbar-hide">
         <div className="w-full max-w-[630px] pt-8 pb-20 px-4 md:px-0">
