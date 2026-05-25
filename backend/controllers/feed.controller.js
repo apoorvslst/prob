@@ -12,7 +12,7 @@ export const getFeedPost = async (req, res) => {
         const following = user.following;
         const feedPosts = await Post.find({
             owner: {
-                $in: following,
+                $in: [...following, currentUser],
             }
         }).sort({ createdAt: -1 }).populate("owner", "username profilePic fullName");
         res.status(200).json(feedPosts);

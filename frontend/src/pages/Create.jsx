@@ -4,16 +4,14 @@ import axios from 'axios';
 const Create = () => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
-    const [file, setFile] = useState(null);
-    const [preview, setPreview] = useState(null);
+    const [files, setFiles] = useState([]);
+    const [previews, setPreviews] = useState([]);
 
     // Handle image selection and preview
     const handleFileChange = (e) => {
-        const selectedFile = e.target.files[0];
-        setFile(selectedFile);
-        if (selectedFile) {
-            setPreview(URL.createObjectURL(selectedFile));
-        }
+        const selectedFiles = Array.from(e.target.files);
+        setFiles(selectedFiles);
+        setPreviews(selectedFiles.map(file => URL.createObjectURL(file)));
     };
 
     const handleSubmit = async (e) => {
@@ -23,7 +21,11 @@ const Create = () => {
         const formData = new FormData();
         formData.append('title', title);
         formData.append('description', description);
-        formData.append('photo', file);
+        
+        // Append all selected files under the 'media' key
+        files.forEach((file) => {
+            formData.append('media', file);
+        });
 
         try {
             const response = await axios.post('/api/post/upload', formData, {
@@ -34,8 +36,8 @@ const Create = () => {
             // Reset form
             setTitle('');
             setDescription('');
-            setFile(null);
-            setPreview(null);
+            setFiles([]);
+            setPreviews([]);
         } catch (error) {
             console.error("Upload error:", error);
             alert("Failed to upload post.");
@@ -52,9 +54,23 @@ const Create = () => {
 
                     <form onSubmit={handleSubmit} className="p-6 space-y-4">
                         {/* Image Upload Area */}
-                        <div className="flex flex-col items-center justify-center border-2 border-dashed border-zinc-800 rounded-lg aspect-square bg-zinc-900 relative hover:bg-zinc-800/50 transition-colors">
-                            {preview ? (
-                                <img src={preview} alt="Preview" className="w-full h-full object-cover rounded-lg" />
+                        <div className="flex flex-col items-center justify-center border-2 border-dashed border-zinc-800 rounded-lg aspect-square bg-zinc-900 relative hover:bg-zinc-800/50 transition-colors overflow-hidden">
+                            {previews.length > 0 ? (
+                                <div className="flex overflow-x-auto snap-x gap-1 w-full h-full p-2 items-center">
+                                    {previews.map((preview, index) => {
+                                        const file = files[index];
+                                        const isVideo = file?.type?.startsWith('video/');
+                                        return (
+                                            <div key={index} className="min-w-full snap-center rounded-lg overflow-hidden flex items-center justify-center bg-black h-full">
+                                                {isVideo ? (
+                                                    <video src={preview} controls className="w-full h-full object-contain" />
+                                                ) : (
+                                                    <img src={preview} alt={`Preview ${index}`} className="w-full h-full object-contain" />
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             ) : (
                                 <div className="flex flex-col items-center">
                                     <div className="w-12 h-12 bg-white rounded-full opacity-10 mb-4 flex items-center justify-center">
@@ -65,6 +81,8 @@ const Create = () => {
                             )}
                             <input 
                                 type="file" 
+                                multiple
+                                accept="image/*,video/*"
                                 onChange={handleFileChange}
                                 className="absolute inset-0 opacity-0 cursor-pointer"
                                 required

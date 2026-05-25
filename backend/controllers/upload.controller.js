@@ -9,10 +9,13 @@ export const createPost = async (req, res) => {
             return res.status(400).json({ message: "Photo is required" });
         }
 
+        // Store the web-accessible URL, not the raw disk path
+        const photoUrl = '/uploads/' + req.file.filename;
+
         const newPost = await Post.create({
             description,
-            photo: photoPath, // Later, you'll swap this for a Cloudinary URL
-            owner: req.user._id // Assumes you have auth middleware
+            photo: photoUrl,
+            owner: req.user._id
         });
 
         return res.status(201).json({ message: "Post uploaded!", post: newPost });

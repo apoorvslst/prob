@@ -80,7 +80,7 @@ const Search = ({ authUser }) => {
 
                 {/* --- HEADER & SEARCH BAR --- */}
                 <div className="text-center mb-10">
-                    <h1 className="text-3xl md:text-4xl font-semibold tracking-wide mb-3">Explore</h1>
+                    <h1 className="text-3xl md:text-4xl font-semibold tracking-wide mb-3">Search</h1>
                     <p className="text-gray-400 text-sm md:text-base">Find people to connect with.</p>
                 </div>
 

@@ -36,7 +36,8 @@ const registerUser = async (req, res) => {
             httpOnly: true, // Frontend JS cannot touch this
             secure: false,  // Set to true only in production (requires HTTPS)
             sameSite: 'Lax', // Necessary for cross-port requests on localhost
-            path: '/'       // Ensure cookie is sent on ALL routes, not just /api/users/
+            path: '/',       // Ensure cookie is sent on ALL routes, not just /api/users/
+            maxAge: 1 * 24 * 60 * 60 * 1000 // 1 day in milliseconds
         };
 
         // Now the user is registered AND logged in immediately
@@ -77,7 +78,8 @@ const loginUser = async (req, res) => {
             httpOnly: true,
             secure: false,
             sameSite: 'Lax',
-            path: '/'
+            path: '/',
+            maxAge: 1 * 24 * 60 * 60 * 1000 // 1 day in milliseconds
         };
 
 
@@ -171,7 +173,16 @@ const updateUserProfile = async (req, res) => {
 const getUserPosts = async (req, res) => {
     try {
         const { id } = req.params;
-        const posts = await Post.find({ owner: id }).sort({ createdAt: -1 });
+        const posts = await Post.find({ owner: id })
+            .sort({ createdAt: -1 })
+            .populate("owner", "username profilePic fullName")
+            .populate({
+                path: "comments",
+                populate: {
+                    path: "user",
+                    select: "username profilePic"
+                }
+            });
         return res.status(200).json(posts);
     } catch (error) {
         return res.status(500).json({ error: error.message });

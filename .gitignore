@@ -22,3 +22,6 @@ npm-debug.log*
 .idea/
 *.swp
 *.swo
+
+# Ignore IDE Data
+.gemini/
