@@ -1,5 +1,6 @@
 import { User } from '../db/User.js';
 import { Post } from '../db/Post.js';
+import { Notification } from '../db/Notification.js';
 
 export const getProfile = async (req, res) => {
     try {
@@ -71,6 +72,23 @@ export const toggleFollow = async (req, res) => {
         await User.findByIdAndUpdate(currentUser, {
             $addToSet: { following: targetUser }
         });
+
+        // --- CREATE NOTIFICATION ---
+        if (targetUser.toString() !== currentUser.toString()) {
+            const newNotification = await Notification.create({
+                recipientId: targetUser,
+                senderId: currentUser,
+                type: "follow",
+            });
+
+            // --- REAL-TIME PUSH ---
+            const receiverSocketId = req.userSocketMap[targetUser.toString()];
+            if (receiverSocketId) {
+                await newNotification.populate("senderId", "username profilePic");
+                req.io.to(receiverSocketId).emit("newNotification", newNotification);
+            }
+        }
+
         return res.status(200).json("Successfully Followed");
     }
     catch (error) {

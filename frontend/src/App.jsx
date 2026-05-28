@@ -6,6 +6,7 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Create from './pages/Create';
+import Reels from './pages/Reels';
 import Search from "./pages/Search";
 import Profile from "./pages/Profile";
 import Message from './pages/Message';
@@ -17,6 +18,22 @@ import axios from 'axios';
 
 // Set withCredentials globally — every axios request will now send cookies
 axios.defaults.withCredentials = true;
+
+// Intercept API responses globally to check if the cookie/token is missing or expired (401 Unauthorized)
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // If 401, it means cookie is missing or invalid.
+      // Clear the state in localStorage and immediately redirect.
+      localStorage.removeItem("user");
+      if (window.location.pathname !== '/login') {
+         window.location.href = "/login";
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 function App() {
   const [authUser, setAuthUser] = useState(JSON.parse(localStorage.getItem("user")) || null);
@@ -39,6 +56,40 @@ function App() {
     }
   }, [authUser]);
 
+  // Listen for real-time notifications
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewNotification = (notification) => {
+      console.log("New Notification Received:", notification);
+      
+      const sender = notification.senderId?.username || "Someone";
+      let actionText = "";
+      if (notification.type === "like") actionText = "liked your post";
+      if (notification.type === "comment") actionText = "commented on your post";
+      if (notification.type === "follow") actionText = "started following you";
+      if (notification.type === "message") actionText = "sent you a message";
+
+      // Simple browser alert to prove it works! 
+      // (Later, you can swap this for a nice UI toast notification)
+      alert(`🔔 ${sender} ${actionText}!`);
+    };
+
+    socket.on("newNotification", handleNewNotification);
+
+    return () => {
+      socket.off("newNotification", handleNewNotification);
+    };
+  }, [socket]);
+
+  // Check if user info is missing from local storage (authUser is null)
+  useEffect(() => {
+    const publicPaths = ['/login', '/register'];
+    if (!authUser && !publicPaths.includes(window.location.pathname)) {
+      window.location.href = "/login";
+    }
+  }, [authUser]);
+
   return (
     <>
     <Router>
@@ -52,6 +103,7 @@ function App() {
                     <Route path="/login" element={<Login setAuthUser={setAuthUser} />} />
                     <Route path="/register" element={<Register setAuthUser={setAuthUser} />} />
                     <Route path="/create" element={<Create />} />
+                    <Route path="/reels" element={<Reels authUser={authUser} />} />
                     <Route path="/message" element={<Message authUser={authUser} socket={socket} />} />
                     <Route path="/search" element={<Search authUser={authUser} />} />
                     <Route path="/profile/:username" element={<Profile />} />

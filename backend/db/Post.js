@@ -4,8 +4,21 @@ const postSchema = new Schema({
     description: {
         type: String,
     },
-    photo: {
+    media: [
+        {
+            url: { type: String, required: true },
+            mediaType: { type: String, enum: ['image', 'video'], required: true }
+        }
+    ],
+    category: {
         type: String,
+        enum: ["fun", "study", "travel", "fashion", "food", "fitness", "other"],
+        default: "other"
+    },
+    postType: {
+        type: String,
+        enum: ["post", "reel"],
+        default: "post"
     },
     likedBy: [
         {
@@ -27,9 +40,9 @@ const postSchema = new Schema({
 
 }, { timestamps: true });
 
-postSchema.pre('validate', function (next) {
-    if (!this.description && !this.photo) {
-        this.invalidate('description', 'A post must have either a description or a photo.');
+postSchema.pre('validate', function () {
+    if (!this.description && (!this.media || this.media.length === 0)) {
+        this.invalidate('description', 'A post must have either a description or media files.');
     }
 });
 

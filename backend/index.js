@@ -3,6 +3,7 @@ import express from 'express';
 import router from './routes/user.routes.js';
 import postrouter from "./routes/post.routes.js";
 import messagerouter from "./routes/message.routes.js";
+import notificationRouter from "./routes/notification.routes.js";
 import cors from 'cors';
 import connectDB from "./db/index.js";
 import cookieParser from 'cookie-parser';
@@ -76,8 +77,7 @@ app.use(cookieParser());
 app.use('/api/users', router); // Keep this line as is, but read the important note below
 app.use('/api/post',postrouter);
 app.use("/api/messages", messagerouter);
-
-
+app.use("/api/notifications", notificationRouter);
 
 connectDB().then(()=>{
     httpServer.listen(8000,()=>{

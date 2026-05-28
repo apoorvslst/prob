@@ -4,14 +4,29 @@ import axios from 'axios';
 const Create = () => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
+    const [category, setCategory] = useState('other');
+    const [postType, setPostType] = useState('post');
     const [files, setFiles] = useState([]);
     const [previews, setPreviews] = useState([]);
+
+    const categories = ["fun", "study", "travel", "fashion", "food", "fitness", "other"];
 
     // Handle image selection and preview
     const handleFileChange = (e) => {
         const selectedFiles = Array.from(e.target.files);
         setFiles(selectedFiles);
         setPreviews(selectedFiles.map(file => URL.createObjectURL(file)));
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        const droppedFiles = Array.from(e.dataTransfer.files);
+        setFiles(droppedFiles);
+        setPreviews(droppedFiles.map(file => URL.createObjectURL(file)));
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
     };
 
     const handleSubmit = async (e) => {
@@ -21,6 +36,8 @@ const Create = () => {
         const formData = new FormData();
         formData.append('title', title);
         formData.append('description', description);
+        formData.append('category', category);
+        formData.append('postType', postType);
         
         // Append all selected files under the 'media' key
         files.forEach((file) => {
@@ -29,13 +46,14 @@ const Create = () => {
 
         try {
             const response = await axios.post('/api/post/upload', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
                 withCredentials: true,
             });
             alert("Post created successfully!");
             // Reset form
             setTitle('');
             setDescription('');
+            setCategory('other');
+            setPostType('post');
             setFiles([]);
             setPreviews([]);
         } catch (error) {
@@ -54,7 +72,11 @@ const Create = () => {
 
                     <form onSubmit={handleSubmit} className="p-6 space-y-4">
                         {/* Image Upload Area */}
-                        <div className="flex flex-col items-center justify-center border-2 border-dashed border-zinc-800 rounded-lg aspect-square bg-zinc-900 relative hover:bg-zinc-800/50 transition-colors overflow-hidden">
+                        <div 
+                            className="flex flex-col items-center justify-center border-2 border-dashed border-zinc-800 rounded-lg aspect-square bg-zinc-900 relative hover:bg-zinc-800/50 transition-colors overflow-hidden"
+                            onDrop={handleDrop}
+                            onDragOver={handleDragOver}
+                        >
                             {previews.length > 0 ? (
                                 <div className="flex overflow-x-auto snap-x gap-1 w-full h-full p-2 items-center">
                                     {previews.map((preview, index) => {
@@ -91,6 +113,39 @@ const Create = () => {
 
                         {/* Inputs */}
                         <div className="space-y-3">
+                            {/* Post Type Toggle */}
+                            <div className="flex rounded-lg overflow-hidden border border-zinc-800">
+                                <button
+                                    type="button"
+                                    onClick={() => setPostType('post')}
+                                    className={`flex-1 py-2 text-sm font-semibold transition-colors ${
+                                        postType === 'post' ? 'bg-blue-500 text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'
+                                    }`}
+                                >
+                                    Post
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setPostType('reel')}
+                                    className={`flex-1 py-2 text-sm font-semibold transition-colors ${
+                                        postType === 'reel' ? 'bg-blue-500 text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'
+                                    }`}
+                                >
+                                    Reel
+                                </button>
+                            </div>
+
+                            {/* Category Dropdown */}
+                            <select 
+                                value={category} 
+                                onChange={(e) => setCategory(e.target.value)}
+                                className="w-full bg-zinc-900 border border-zinc-800 py-2 px-3 rounded-lg focus:outline-none focus:border-blue-500 text-sm text-white capitalize"
+                            >
+                                {categories.map(c => (
+                                    <option key={c} value={c}>{c}</option>
+                                ))}
+                            </select>
+                            
                             <input 
                                 type="text" 
                                 placeholder="Add a title..." 

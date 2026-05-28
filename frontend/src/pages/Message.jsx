@@ -58,6 +58,49 @@ const Message = ({ authUser, socket }) => {
         fetchMessages();
     }, [selectedUser]);
 
+    // --- NEW: MARK MESSAGES AS SEEN ---
+    useEffect(() => {
+        if (!selectedUser || !authUser || messages.length === 0) return;
+
+        const lastMessage = messages[messages.length - 1];
+        
+        if (lastMessage.senderId === selectedUser._id && lastMessage.status !== 'seen') {
+            const markAsSeen = async () => {
+                try {
+                    await axios.put(`/api/messages/${selectedUser._id}`, {}, {
+                        withCredentials: true
+                    });
+                    
+                    setMessages(prev => prev.map(msg => 
+                        msg.senderId === selectedUser._id ? { ...msg, status: 'seen' } : msg
+                    ));
+                } catch (error) {
+                    console.error("Failed to mark messages as seen:", error);
+                }
+            };
+            markAsSeen();
+        }
+    }, [messages, selectedUser, authUser]);
+
+    // --- NEW: LISTEN FOR SEEN CONFIRMATION ---
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleMessagesSeen = ({ receiverId }) => {
+            if (selectedUser && receiverId === selectedUser._id) {
+                setMessages(prev => prev.map(msg => {
+                    if (msg.senderId === authUser._id) {
+                        return { ...msg, status: 'seen' };
+                    }
+                    return msg;
+                }));
+            }
+        };
+
+        socket.on("messagesSeen", handleMessagesSeen);
+        return () => socket.off("messagesSeen", handleMessagesSeen);
+    }, [socket, selectedUser, authUser]);
+
     // --- 4. LISTEN FOR REAL-TIME SOCKET MESSAGES ---
     useEffect(() => {
         if (!socket) return;
@@ -150,11 +193,17 @@ const Message = ({ authUser, socket }) => {
                         <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-2 scrollbar-hide">
                             {messages.map((msg, idx) => {
                                 const isMe = msg.senderId === authUser?._id;
+                                const isLastMessage = idx === messages.length - 1;
                                 return (
                                     <div key={idx} className={`max-w-[60%] flex flex-col ${isMe ? "self-end" : "self-start"}`}>
                                         <div className={`px-4 py-2 rounded-3xl text-sm ${isMe ? "bg-[#3797F0] text-white" : "bg-[#262626] text-white"}`}>
                                             {msg.message}
                                         </div>
+                                        {isMe && isLastMessage && msg.status === 'seen' && (
+                                            <span className="text-[11px] text-[#A8A8A8] self-end mt-1 mr-2">
+                                                Seen
+                                            </span>
+                                        )}
                                     </div>
                                 );
                             })}

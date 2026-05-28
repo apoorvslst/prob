@@ -5,7 +5,7 @@ const Sidebar = ({ authUser }) => {
     const navItems = [
         { name: 'Home', path: '/' },
         { name: 'Search', path: '/search' },
-        { name: 'Reels', path: '#' },
+        { name: 'Reels', path: '/reels' },
         { name: 'Messages', path: '/message' },
         { name: 'Notifications', path: '#' },
         { name: 'Create', path: '/create' },
