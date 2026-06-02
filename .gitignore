@@ -1,27 +1,97 @@
-# Ignore Node Modules
+# ===========================
+# Dependencies
+# ===========================
 node_modules/
+.pnp
+.pnp.js
 
-# Ignore Environment variables
+# ===========================
+# Environment Variables
+# ===========================
 .env
 .env.*
+!.env.example
 
-# Ignore logs
+# ===========================
+# Build Output
+# ===========================
+dist/
+dist-ssr/
+build/
+*.local
+
+# ===========================
+# Logs
+# ===========================
+logs/
 *.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# Ignore Documentation / Non-code files
-*implementation*plan*
-*.md
-!README.md
-
-# Ignore OS generated files
+# ===========================
+# OS Generated Files
+# ===========================
 .DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+*.lnk
 
-# Ignore Editor files
+# ===========================
+# Editor / IDE Files
+# ===========================
 .vscode/
+!.vscode/extensions.json
 .idea/
 *.swp
 *.swo
+*.sw?
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*~
 
-# Ignore IDE Data
+# ===========================
+# IDE / Tool Data
+# ===========================
 .gemini/
+
+# ===========================
+# Test & Coverage
+# ===========================
+coverage/
+*.lcov
+.nyc_output/
+
+# ===========================
+# User Uploads & Temp Files
+# ===========================
+backend/public/uploads/
+backend/public/temp/
+
+# ===========================
+# Documentation (keep README)
+# ===========================
+*implementation*plan*
+*.md
+!README.md
+!frontend/README.md
+
+# ===========================
+# Package manager lock files
+# (uncomment if you want to ignore them)
+# ===========================
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# ===========================
+# Misc
+# ===========================
+*.tsbuildinfo
+.eslintcache
+.cache/

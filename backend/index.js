@@ -7,13 +7,13 @@ import notificationRouter from "./routes/notification.routes.js";
 import cors from 'cors';
 import connectDB from "./db/index.js";
 import cookieParser from 'cookie-parser';
-import { createServer } from 'http'; 
-import { Server } from 'socket.io'; 
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 
 dotenv.config();
 
-const app=express();
-const PORT=8000;
+const app = express();
+const PORT = 8000;
 
 // CREATE THE EXPLICIT HTTP SERVER
 const httpServer = createServer(app);
@@ -47,7 +47,7 @@ io.on("connection", (socket) => {
 
     // When React connects, it will pass the user's database ID
     const userId = socket.handshake.query.userId;
-    
+
     // Add them to the phonebook if they are logged in
     if (userId && userId !== "undefined") {
         userSocketMap[userId] = socket.id;
@@ -66,8 +66,37 @@ io.on("connection", (socket) => {
     });
 });
 
+const emailToSocketMapping = new Map();
+const socketToEmailMapping = new Map();
+
+io.on("connection", (socket) => {
+    socket.on('join-room', data => {
+        console.log("New Connection");
+        const { roomId, emailId } = data;
+        emailToSocketMapping.set(emailId, socket.id);
+        socketToEmailMapping.set(socket.id, emailId);
+        socket.join(roomId);
+        socket.emit('joined-room', { roomId });
+        socket.broadcast.to(roomId).emit('user-joined', { emailId });
+        console.log(`${emailId} joined the room ${roomId}`);
+
+    });
+    socket.on('call-user', data => {
+        const { emailId, offer } = data;
+        const from = socketToEmailMapping.get(socket.id);
+        const socketId = emailToSocketMapping.get(emailId);
+        socket.to(socketId).emit("incoming-call", { from: from, offer: offer });
+    });
+    socket.on('call-accepted', data => {
+        const { emailId, ans } = data;
+        const socketId = emailToSocketMapping.get(emailId);
+        const from = socketToEmailMapping.get(socket.id); // Get the email of the person answering
+        socket.to(socketId).emit("call-accepted", { from, ans });
+    })
+});
+
 app.use(cors({
-    origin: 'http://localhost:5173', 
+    origin: 'http://localhost:5173',
     credentials: true
 }));
 app.use(express.json());
@@ -75,16 +104,16 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 app.use('/api/users', router); // Keep this line as is, but read the important note below
-app.use('/api/post',postrouter);
+app.use('/api/post', postrouter);
 app.use("/api/messages", messagerouter);
 app.use("/api/notifications", notificationRouter);
 
-connectDB().then(()=>{
-    httpServer.listen(8000,()=>{
+connectDB().then(() => {
+    httpServer.listen(8000, () => {
         console.log("Server is running at PORT 8000");
     })
 });
 
-app.get('/',(req,res)=>{
-    return res.json({status: "Server is running"});
+app.get('/', (req, res) => {
+    return res.json({ status: "Server is running" });
 });

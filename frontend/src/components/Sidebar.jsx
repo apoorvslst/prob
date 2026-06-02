@@ -10,6 +10,7 @@ const Sidebar = ({ authUser }) => {
         { name: 'Notifications', path: '#' },
         { name: 'Create', path: '/create' },
         { name: 'Profile', path: `/profile/${authUser?.username}` },
+        { name: 'Video Call', path: '/video' },
     ];
 
     return (
@@ -31,7 +32,7 @@ const Sidebar = ({ authUser }) => {
                 </nav>
             </div>
             <div className="mt-auto px-2 pb-4">
-                <button 
+                <button
                     onClick={() => { localStorage.removeItem("user"); window.location.reload(); }}
                     className="flex items-center gap-4 p-3 w-full rounded-lg hover:bg-neutral-900 text-red-500 transition-all"
                 >
