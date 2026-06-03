@@ -1,17 +1,80 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useSocket } from '../providers/Socket';
 
 const Message = ({ authUser, socket }) => {
     const location = useLocation();
+    const navigate = useNavigate();
+    const videoSocket = useSocket();
 
     // --- STATE ---
     const [messages, setMessages] = useState([]);
     const [inputText, setInputText] = useState("");
     const [chatUsers, setChatUsers] = useState([]); // List of users for the sidebar
     const [selectedUser, setSelectedUser] = useState(null); // No one is selected initially
+    const [incomingCall, setIncomingCall] = useState(null); // { roomId, callerName, callerId }
     
     const messagesEndRef = useRef(null);
+
+    // --- VIDEO CALL: SEND INVITE ---
+    const handleVideoCall = useCallback(() => {
+        if (!selectedUser || !authUser || !socket) return;
+        const ids = [authUser._id, selectedUser._id].sort();
+        const roomId = ids.join('_');
+        // Send invite to the other user via main socket (has userSocketMap)
+        socket.emit('video-call-invite', {
+            targetUserId: selectedUser._id,
+            roomId,
+            callerName: authUser.fullName || authUser.username
+        });
+        // Also join the room yourself via the WebRTC socket
+        videoSocket.emit('join-room', { emailId: authUser.email || authUser.username, roomId });
+    }, [selectedUser, authUser, socket, videoSocket]);
+
+    // Navigate when WebRTC socket confirms room join
+    useEffect(() => {
+        if (!videoSocket) return;
+        const handleRoomJoined = ({ roomId }) => {
+            navigate(`/room/${roomId}`);
+        };
+        videoSocket.on('joined-room', handleRoomJoined);
+        return () => videoSocket.off('joined-room', handleRoomJoined);
+    }, [videoSocket, navigate]);
+
+    // --- VIDEO CALL: LISTEN FOR INCOMING INVITE ---
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleIncomingCall = ({ roomId, callerName, callerId }) => {
+            setIncomingCall({ roomId, callerName, callerId });
+        };
+
+        const handleCallDeclined = () => {
+            alert('Your call was declined.');
+        };
+
+        socket.on('video-call-invite', handleIncomingCall);
+        socket.on('video-call-declined', handleCallDeclined);
+        return () => {
+            socket.off('video-call-invite', handleIncomingCall);
+            socket.off('video-call-declined', handleCallDeclined);
+        };
+    }, [socket]);
+
+    // Accept incoming call
+    const handleAcceptCall = useCallback(() => {
+        if (!incomingCall || !authUser) return;
+        videoSocket.emit('join-room', { emailId: authUser.email || authUser.username, roomId: incomingCall.roomId });
+        setIncomingCall(null);
+    }, [incomingCall, authUser, videoSocket]);
+
+    // Decline incoming call
+    const handleDeclineCall = useCallback(() => {
+        if (!incomingCall || !socket) return;
+        socket.emit('video-call-decline', { callerId: incomingCall.callerId });
+        setIncomingCall(null);
+    }, [incomingCall, socket]);
 
     // Handle navigation from Profile page to select a user automatically
     useEffect(() => {
@@ -184,9 +247,19 @@ const Message = ({ authUser, socket }) => {
                         {/* Chat Header */}
                         <div className="h-[75px] border-b border-[#262626] flex items-center px-6 gap-3">
                             <img src={selectedUser.profilePic || "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png"} className="w-11 h-11 rounded-full object-cover" alt="Profile" />
-                            <div className="flex flex-col">
+                            <div className="flex flex-col flex-1">
                                 <span className="font-semibold text-sm">{selectedUser.fullName || selectedUser.username}</span>
                             </div>
+                            {/* Video Call Button */}
+                            <button
+                                onClick={handleVideoCall}
+                                className="p-2 rounded-full hover:bg-[#262626] transition-colors cursor-pointer group"
+                                title="Start video call"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-white group-hover:text-[#3797F0] transition-colors">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                                </svg>
+                            </button>
                         </div>
 
                         {/* Messages Feed */}
@@ -228,6 +301,38 @@ const Message = ({ authUser, socket }) => {
                     </>
                 )}
             </div>
+
+            {/* INCOMING CALL OVERLAY */}
+            {incomingCall && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center">
+                    <div className="bg-[#1a1a1a] border border-[#363636] rounded-2xl p-8 flex flex-col items-center gap-5 shadow-2xl min-w-[320px]">
+                        {/* Pulsing call icon */}
+                        <div className="w-20 h-20 rounded-full bg-[#3797F0]/20 flex items-center justify-center animate-pulse">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-[#3797F0]">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                            </svg>
+                        </div>
+                        <div className="text-center">
+                            <h3 className="text-lg font-semibold text-white">Incoming Video Call</h3>
+                            <p className="text-[#A8A8A8] text-sm mt-1">{incomingCall.callerName} is calling you</p>
+                        </div>
+                        <div className="flex gap-4 mt-2">
+                            <button
+                                onClick={handleDeclineCall}
+                                className="px-6 py-2.5 rounded-full bg-red-600 hover:bg-red-700 text-white font-semibold text-sm transition-colors cursor-pointer"
+                            >
+                                Decline
+                            </button>
+                            <button
+                                onClick={handleAcceptCall}
+                                className="px-6 py-2.5 rounded-full bg-green-600 hover:bg-green-700 text-white font-semibold text-sm transition-colors cursor-pointer"
+                            >
+                                Accept
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

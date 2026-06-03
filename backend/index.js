@@ -56,6 +56,30 @@ io.on("connection", (socket) => {
     // Send the updated list of online users to everyone (great for green "Online" dots)
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
+    // --- VIDEO CALL INVITE ---
+    // User A sends { targetUserId, roomId, callerName } → forward to User B
+    socket.on("video-call-invite", ({ targetUserId, roomId, callerName }) => {
+        console.log(`\n[DEBUG] video-call-invite received from ${userId}`);
+        console.log(`[DEBUG] targetUserId: ${targetUserId}, roomId: ${roomId}, callerName: ${callerName}`);
+        console.log(`[DEBUG] Current userSocketMap:`, userSocketMap);
+
+        const targetSocketId = userSocketMap[targetUserId];
+        if (targetSocketId) {
+            io.to(targetSocketId).emit("video-call-invite", { roomId, callerName, callerId: userId });
+            console.log(`📹 Video call invite sent: ${userId} → ${targetUserId} (socket: ${targetSocketId}, room: ${roomId})`);
+        } else {
+            console.log(`❌ Failed to send invite: User ${targetUserId} is not online (not in userSocketMap).`);
+        }
+    });
+
+    // User B declines → notify User A
+    socket.on("video-call-decline", ({ callerId }) => {
+        const callerSocketId = userSocketMap[callerId];
+        if (callerSocketId) {
+            io.to(callerSocketId).emit("video-call-declined");
+        }
+    });
+
     // If they disconnect, remove them from the phonebook
     socket.on("disconnect", () => {
         console.log("🔴 User disconnected:", socket.id);
@@ -65,6 +89,7 @@ io.on("connection", (socket) => {
         io.emit("getOnlineUsers", Object.keys(userSocketMap));
     });
 });
+
 
 const emailToSocketMapping = new Map();
 const socketToEmailMapping = new Map();
@@ -92,7 +117,23 @@ io.on("connection", (socket) => {
         const socketId = emailToSocketMapping.get(emailId);
         const from = socketToEmailMapping.get(socket.id); // Get the email of the person answering
         socket.to(socketId).emit("call-accepted", { from, ans });
-    })
+    });
+
+    socket.on('ice-candidate', data => {
+        const { emailId, candidate } = data;
+        const socketId = emailToSocketMapping.get(emailId);
+        if (socketId) {
+            socket.to(socketId).emit("ice-candidate", { candidate });
+        }
+    });
+
+    socket.on('end-call', data => {
+        const { emailId } = data;
+        const socketId = emailToSocketMapping.get(emailId);
+        if (socketId) {
+            socket.to(socketId).emit("end-call");
+        }
+    });
 });
 
 app.use(cors({

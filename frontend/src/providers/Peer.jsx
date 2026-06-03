@@ -37,9 +37,14 @@ export const PeerProvider = (props) => {
     const sendStream = async (stream) => {
         const tracks = stream.getTracks();
         for (const track of tracks) {
-            peer.addTrack(track, stream);
+            // Only add the track if it hasn't been added already
+            const alreadyAdded = peer.getSenders().find(sender => sender.track === track);
+            if (!alreadyAdded) {
+                peer.addTrack(track, stream);
+            }
         }
     }
+
 
     const handleTrackEvent = useCallback(async (ev) => {
         const streams = ev.streams;
