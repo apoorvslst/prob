@@ -23,11 +23,14 @@ const VideoPlayer = ({ stream, muted }) => {
 
 const Room = () => {
     const socket = useSocket();
-    const { peer, createOffer, createAnswer, setRemoteAnswer, sendStream, remoteStream } = usePeer();
+    const { peer, createOffer, setRemoteOffer, generateAnswer, setRemoteAnswer, sendStream, remoteStream } = usePeer();
     const params = useParams();
 
     const [myStream, setMyStream] = useState(null);
     const [remoteEmailId, setRemoteEmailId] = useState(null);
+
+    // Store stream in a ref so callbacks always have the latest value
+    const myStreamRef = useRef(null);
 
     // Sync promise to ensure we don't negotiate WebRTC before the camera is fully on
     const streamReadyPromiseRef = useRef(null);
@@ -38,22 +41,31 @@ const Room = () => {
         });
     }
 
+    // CALLER PATH: When a new user joins the room, send them an offer
+    // 1. Wait for camera → 2. Add tracks → 3. Create offer → 4. Send
     const handleNewUserJoined = useCallback(async (data) => {
         const { emailId } = data;
         console.log("new user joined", emailId);
         setRemoteEmailId(emailId);
-        await streamReadyPromiseRef.current; // Wait for camera
+        const stream = await streamReadyPromiseRef.current; // Wait for camera
+        await sendStream(stream);
         const offer = await createOffer();
         socket.emit("call-user", { emailId, offer });
-    }, [createOffer, socket]);
+    }, [createOffer, sendStream, socket]);
 
+    // CALLEE PATH: When receiving a call offer
+    // 1. Wait for camera → 2. Set remote offer → 3. Add tracks → 4. Generate answer → 5. Send
+    // The key fix: tracks are added AFTER setRemoteDescription but BEFORE createAnswer,
+    // so the answer SDP includes the callee's tracks.
     const handleIncomingCall = useCallback(async ({ from, offer }) => {
-        console.log('incoming call', from, offer);
-        await streamReadyPromiseRef.current; // Wait for camera
-        const ans = await createAnswer(offer);
+        console.log('incoming call from', from);
+        const stream = await streamReadyPromiseRef.current; // Wait for camera
+        await setRemoteOffer(offer);
+        await sendStream(stream);
+        const ans = await generateAnswer();
         socket.emit('call-accepted', { emailId: from, ans });
         setRemoteEmailId(from);
-    }, [createAnswer, socket]);
+    }, [setRemoteOffer, sendStream, generateAnswer, socket]);
 
     const handleCallAccepted = useCallback(async (data) => {
         const { ans } = data;
@@ -65,23 +77,25 @@ const Room = () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
             setMyStream(stream);
-            await sendStream(stream);
+            myStreamRef.current = stream;
+            // DON'T call sendStream here — tracks will be added at the right time
+            // during the offer/answer exchange in handleNewUserJoined or handleIncomingCall
             streamReadyResolveRef.current(stream);
         } catch (err) {
             console.error("Failed to get camera:", err);
         }
-    }, [sendStream]);
+    }, []);
 
     // End call cleanup
     const handleEndCall = useCallback(() => {
         if (remoteEmailId) {
             socket.emit('end-call', { emailId: remoteEmailId });
         }
-        if (myStream) {
-            myStream.getTracks().forEach(track => track.stop());
+        if (myStreamRef.current) {
+            myStreamRef.current.getTracks().forEach(track => track.stop());
         }
         window.location.href = '/message'; // Hard redirect to reset global Peer connection state
-    }, [remoteEmailId, socket, myStream]);
+    }, [remoteEmailId, socket]);
 
     useEffect(() => {
         const handleIceCandidate = (event) => {
@@ -98,7 +112,7 @@ const Room = () => {
             if (candidate) peer.addIceCandidate(new RTCIceCandidate(candidate)).catch(console.error);
         };
         const handleRemoteEndCall = () => {
-            if (myStream) myStream.getTracks().forEach(track => track.stop());
+            if (myStreamRef.current) myStreamRef.current.getTracks().forEach(track => track.stop());
             window.location.href = '/message';
         };
 
@@ -115,7 +129,7 @@ const Room = () => {
             socket.off('ice-candidate', handleIncomingIce);
             socket.off('end-call', handleRemoteEndCall);
         }
-    }, [handleNewUserJoined, handleIncomingCall, handleCallAccepted, socket, peer, myStream]);
+    }, [handleNewUserJoined, handleIncomingCall, handleCallAccepted, socket, peer]);
 
     useEffect(() => {
         getUserMediaStream();
@@ -179,14 +193,6 @@ const Room = () => {
 
             {/* Controls Bar */}
             <div className="h-[80px] border-t border-[#262626] flex items-center justify-center gap-4 shrink-0">
-                {!remoteStream && myStream && (
-                    <button
-                        onClick={() => sendStream(myStream)}
-                        className="bg-[#3797F0] hover:bg-[#2b86de] text-white font-semibold text-sm px-6 py-2.5 rounded-full transition-colors cursor-pointer"
-                    >
-                        Send My Video
-                    </button>
-                )}
                 <button
                     onClick={handleEndCall}
                     className="bg-red-600 hover:bg-red-700 text-white font-semibold text-sm px-6 py-2.5 rounded-full transition-colors cursor-pointer"

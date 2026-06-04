@@ -9,6 +9,8 @@ import connectDB from "./db/index.js";
 import cookieParser from 'cookie-parser';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import { Message } from './db/Message.js';
+import { Conversation } from './db/Conversation.js';
 
 dotenv.config();
 
@@ -58,7 +60,7 @@ io.on("connection", (socket) => {
 
     // --- VIDEO CALL INVITE ---
     // User A sends { targetUserId, roomId, callerName } → forward to User B
-    socket.on("video-call-invite", ({ targetUserId, roomId, callerName }) => {
+    socket.on("video-call-invite", async ({ targetUserId, roomId, callerName }) => {
         console.log(`\n[DEBUG] video-call-invite received from ${userId}`);
         console.log(`[DEBUG] targetUserId: ${targetUserId}, roomId: ${roomId}, callerName: ${callerName}`);
         console.log(`[DEBUG] Current userSocketMap:`, userSocketMap);
@@ -69,6 +71,37 @@ io.on("connection", (socket) => {
             console.log(`📹 Video call invite sent: ${userId} → ${targetUserId} (socket: ${targetSocketId}, room: ${roomId})`);
         } else {
             console.log(`❌ Failed to send invite: User ${targetUserId} is not online (not in userSocketMap).`);
+            
+            try {
+                let conversation = await Conversation.findOne({
+                    participants: { $all: [userId, targetUserId] },
+                });
+
+                if (!conversation) {
+                    conversation = await Conversation.create({
+                        participants: [userId, targetUserId],
+                    });
+                }
+
+                const newMessage = new Message({
+                    senderId: userId,
+                    receiverId: targetUserId,
+                    message: "Missed video call",
+                });
+
+                if (newMessage) {
+                    conversation.messages.push(newMessage._id);
+                }
+                await Promise.all([conversation.save(), newMessage.save()]);
+
+                const callerSocketId = userSocketMap[userId];
+                if (callerSocketId) {
+                    io.to(callerSocketId).emit("newMessage", newMessage);
+                    io.to(callerSocketId).emit("video-call-offline");
+                }
+            } catch (error) {
+                console.error("Error creating missed call message:", error);
+            }
         }
     });
 

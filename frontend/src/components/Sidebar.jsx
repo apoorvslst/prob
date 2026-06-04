@@ -10,7 +10,6 @@ const Sidebar = ({ authUser }) => {
         { name: 'Notifications', path: '#' },
         { name: 'Create', path: '/create' },
         { name: 'Profile', path: `/profile/${authUser?.username}` },
-        { name: 'Video Call', path: '/video' },
     ];
 
     return (

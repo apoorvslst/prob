@@ -25,15 +25,23 @@ export const PeerProvider = (props) => {
         await peer.setLocalDescription(offer);
         return offer;
     };
-    const createAnswer = async (offer) => {
+
+    // Split createAnswer: set remote description first, then create+set answer.
+    // This allows the caller to add tracks between setRemoteDescription and createAnswer.
+    const setRemoteOffer = async (offer) => {
         await peer.setRemoteDescription(offer);
+    };
+
+    const generateAnswer = async () => {
         const answer = await peer.createAnswer();
         await peer.setLocalDescription(answer);
         return answer;
-    }
+    };
+
     const setRemoteAnswer = async (ans) => {
         await peer.setRemoteDescription(ans);
-    }
+    };
+
     const sendStream = async (stream) => {
         const tracks = stream.getTracks();
         for (const track of tracks) {
@@ -43,28 +51,23 @@ export const PeerProvider = (props) => {
                 peer.addTrack(track, stream);
             }
         }
-    }
+    };
 
-
-    const handleTrackEvent = useCallback(async (ev) => {
+    const handleTrackEvent = useCallback((ev) => {
         const streams = ev.streams;
         setremoteStream(streams[0]);
-
     }, []);
 
-
-
     useEffect(() => {
-        peer.addEventListener('track', handleTrackEvent)
+        peer.addEventListener('track', handleTrackEvent);
 
         return () => {
-            peer.removeEventListener('track', handleTrackEvent)
-
+            peer.removeEventListener('track', handleTrackEvent);
         }
-    })
+    }, [peer, handleTrackEvent]);
 
 
-    return <PeerContext.Provider value={{ peer, createOffer, createAnswer, setRemoteAnswer, sendStream, remoteStream }}>
+    return <PeerContext.Provider value={{ peer, createOffer, setRemoteOffer, generateAnswer, setRemoteAnswer, sendStream, remoteStream }}>
         {props.children}
     </PeerContext.Provider>
 }

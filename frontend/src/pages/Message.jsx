@@ -14,7 +14,7 @@ const Message = ({ authUser, socket }) => {
     const [chatUsers, setChatUsers] = useState([]); // List of users for the sidebar
     const [selectedUser, setSelectedUser] = useState(null); // No one is selected initially
     const [incomingCall, setIncomingCall] = useState(null); // { roomId, callerName, callerId }
-    
+
     const messagesEndRef = useRef(null);
 
     // --- VIDEO CALL: SEND INVITE ---
@@ -54,11 +54,17 @@ const Message = ({ authUser, socket }) => {
             alert('Your call was declined.');
         };
 
+        const handleCallOffline = () => {
+            alert('The user is currently offline. A missed call message has been sent.');
+        };
+
         socket.on('video-call-invite', handleIncomingCall);
         socket.on('video-call-declined', handleCallDeclined);
+        socket.on('video-call-offline', handleCallOffline);
         return () => {
             socket.off('video-call-invite', handleIncomingCall);
             socket.off('video-call-declined', handleCallDeclined);
+            socket.off('video-call-offline', handleCallOffline);
         };
     }, [socket]);
 
@@ -126,15 +132,15 @@ const Message = ({ authUser, socket }) => {
         if (!selectedUser || !authUser || messages.length === 0) return;
 
         const lastMessage = messages[messages.length - 1];
-        
+
         if (lastMessage.senderId === selectedUser._id && lastMessage.status !== 'seen') {
             const markAsSeen = async () => {
                 try {
                     await axios.put(`/api/messages/${selectedUser._id}`, {}, {
                         withCredentials: true
                     });
-                    
-                    setMessages(prev => prev.map(msg => 
+
+                    setMessages(prev => prev.map(msg =>
                         msg.senderId === selectedUser._id ? { ...msg, status: 'seen' } : msg
                     ));
                 } catch (error) {
@@ -213,7 +219,7 @@ const Message = ({ authUser, socket }) => {
 
                     {/* Loop through the users we fetched from backend */}
                     {chatUsers.map((user) => (
-                        <div 
+                        <div
                             key={user._id}
                             onClick={() => setSelectedUser(user)}
                             className={`flex items-center gap-3 px-6 py-3 cursor-pointer hover:bg-[#121212] transition-colors ${selectedUser?._id === user._id ? 'bg-[#121212]' : ''}`}
