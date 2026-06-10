@@ -31,13 +31,13 @@ const registerUser = async (req, res) => {
             { expiresIn: '1d' }
         );
 
-        // SET THE COOKIE
+        const isProduction = process.env.NODE_ENV === "production" || !process.env.FRONTEND_URL?.includes('localhost');
         const options = {
-            httpOnly: true, // Frontend JS cannot touch this
-            secure: false,  // Set to true only in production (requires HTTPS)
-            sameSite: 'Lax', // Necessary for cross-port requests on localhost
-            path: '/',       // Ensure cookie is sent on ALL routes, not just /api/users/
-            maxAge: 1 * 24 * 60 * 60 * 1000 // 1 day in milliseconds
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: isProduction ? 'none' : 'Lax',
+            path: '/',
+            maxAge: 1 * 24 * 60 * 60 * 1000
         };
 
         // Now the user is registered AND logged in immediately
@@ -73,13 +73,13 @@ const loginUser = async (req, res) => {
             { expiresIn: '1d' } // Token lasts for 1 day
         );
 
-        // 4. Send token in a secure, hidden cookie
+        const isProduction = process.env.NODE_ENV === "production" || !process.env.FRONTEND_URL?.includes('localhost');
         const options = {
             httpOnly: true,
-            secure: false,
-            sameSite: 'Lax',
+            secure: isProduction,
+            sameSite: isProduction ? 'none' : 'Lax',
             path: '/',
-            maxAge: 1 * 24 * 60 * 60 * 1000 // 1 day in milliseconds
+            maxAge: 1 * 24 * 60 * 60 * 1000
         };
 
 
