@@ -26,7 +26,7 @@ app.use('/uploads', express.static('public/uploads'));
 // ATTACH SOCKET.IO TO THAT SERVER
 const io = new Server(httpServer, {
     cors: {
-        origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+        origin: process.env.FRONTEND_URL || "http://localhost:5173",
         credentials: true
     }
 });
@@ -170,7 +170,7 @@ io.on("connection", (socket) => {
 });
 
 app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
     credentials: true
 }));
 app.use(express.json());
@@ -182,9 +182,10 @@ app.use('/api/post', postrouter);
 app.use("/api/messages", messagerouter);
 app.use("/api/notifications", notificationRouter);
 
+const port = process.env.PORT || 8000;
 connectDB().then(() => {
-    httpServer.listen(8000, () => {
-        console.log("Server is running at PORT 8000");
+    httpServer.listen(port, () => {
+        console.log(`Server is running at PORT ${port}`);
     })
 });
 

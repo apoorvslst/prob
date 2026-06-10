@@ -7,7 +7,6 @@ const Sidebar = ({ authUser }) => {
         { name: 'Search', path: '/search' },
         { name: 'Reels', path: '/reels' },
         { name: 'Messages', path: '/message' },
-        { name: 'Notifications', path: '#' },
         { name: 'Create', path: '/create' },
         { name: 'Profile', path: `/profile/${authUser?.username}` },
     ];

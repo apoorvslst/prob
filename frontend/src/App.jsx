@@ -22,6 +22,7 @@ import { PeerProvider } from './providers/Peer';
 
 // Set withCredentials globally — every axios request will now send cookies
 axios.defaults.withCredentials = true;
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
 
 // Intercept API responses globally to check if the cookie/token is missing or expired (401 Unauthorized)
 axios.interceptors.response.use(
@@ -46,7 +47,8 @@ function App() {
 
   useEffect(() => {
     if (authUser) {
-      const newSocket = io("http://localhost:8000", {
+      const socketUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
+      const newSocket = io(socketUrl, {
         query: { userId: authUser._id }
       });
       setSocket(newSocket);
