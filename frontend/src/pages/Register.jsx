@@ -39,6 +39,7 @@ const Register = ({ setAuthUser }) => {
             });
             
             localStorage.setItem("user", JSON.stringify(response.data.user));
+            localStorage.setItem("token", response.data.token);
             setAuthUser(response.data.user);
             navigate("/");
         } catch (error) {

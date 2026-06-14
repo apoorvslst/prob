@@ -70,6 +70,7 @@ const Reels = ({ authUser }) => {
 
   // Fetch real reels from your database reels route
   useEffect(() => {
+    if (!authUser) return; // Don't fetch if not authenticated
     const fetchReels = async () => {
       try {
         const res = await axios.get('/api/post/reels', {
@@ -81,7 +82,7 @@ const Reels = ({ authUser }) => {
       }
     };
     fetchReels();
-  }, []);
+  }, [authUser]);
 
   const handleLike = async (postId) => {
     try {

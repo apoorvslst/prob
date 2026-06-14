@@ -30,6 +30,7 @@ const Home = ({ authUser }) => {
 
   // Fetch real posts from your database feed route
   useEffect(() => {
+    if (!authUser) return; // Don't fetch if not authenticated
     const fetchFeed = async () => {
       try {
         const res = await axios.get('/api/post/feed', {
@@ -41,7 +42,7 @@ const Home = ({ authUser }) => {
       }
     };
     fetchFeed();
-  }, []);
+  }, [authUser]);
 
   // The Magic Like Function
   const handleLike = async (postId) => {

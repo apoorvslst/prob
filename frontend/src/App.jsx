@@ -28,16 +28,32 @@ function App() {
   const [authUser, setAuthUser] = useState(JSON.parse(localStorage.getItem("user")) || null);
   const navigate = useNavigate();
 
+  // Axios request interceptor: attach token from localStorage as Authorization header
+  // This is the reliable fallback when cross-origin cookies are blocked by the browser
   useEffect(() => {
-    const interceptor = axios.interceptors.response.use(
+    const reqInterceptor = axios.interceptors.request.use((config) => {
+      const token = localStorage.getItem("token");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    });
+
+    return () => {
+      axios.interceptors.request.eject(reqInterceptor);
+    };
+  }, []);
+
+  // Axios response interceptor: handle 401 (expired/missing token)
+  useEffect(() => {
+    const resInterceptor = axios.interceptors.response.use(
       (response) => response,
       (error) => {
         if (error.response && error.response.status === 401) {
-          // If 401, it means cookie is missing or invalid.
-          // Clear the state in localStorage and immediately redirect.
           localStorage.removeItem("user");
+          localStorage.removeItem("token");
           setAuthUser(null);
-          if (window.location.pathname !== '/login') {
+          if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
             navigate("/login");
           }
         }
@@ -46,7 +62,7 @@ function App() {
     );
 
     return () => {
-      axios.interceptors.response.eject(interceptor);
+      axios.interceptors.response.eject(resInterceptor);
     };
   }, [navigate]);
   const [socket, setSocket] = useState(null);

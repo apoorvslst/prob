@@ -45,7 +45,8 @@ const registerUser = async (req, res) => {
             .status(201)
             .cookie("accessToken", accessToken, options)
             .json({
-                message: "User registered and logged in successfully!", // Changed to include all user data
+                message: "User registered and logged in successfully!",
+                token: accessToken,
                 user: { _id: user._id, username: user.username, email: user.email, profilePic: user.profilePic, fullName: user.fullName }
             });
     }
@@ -88,6 +89,7 @@ const loginUser = async (req, res) => {
             .cookie("accessToken", accessToken, options) // Set the cookie
             .json({
                 message: "Login successful",
+                token: accessToken,
                 user: { _id: existedUser._id, username: existedUser.username, email: existedUser.email, profilePic: existedUser.profilePic, fullName: existedUser.fullName }
             });
     }

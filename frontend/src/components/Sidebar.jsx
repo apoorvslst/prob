@@ -31,7 +31,7 @@ const Sidebar = ({ authUser }) => {
             </div>
             <div className="mt-auto px-2 pb-4">
                 <button
-                    onClick={() => { localStorage.removeItem("user"); window.location.reload(); }}
+                    onClick={() => { localStorage.removeItem("user"); localStorage.removeItem("token"); window.location.reload(); }}
                     className="flex items-center gap-4 p-3 w-full rounded-lg hover:bg-neutral-900 text-red-500 transition-all"
                 >
                     <span>Logout</span>

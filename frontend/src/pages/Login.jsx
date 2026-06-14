@@ -25,8 +25,9 @@ const Login = ({ setAuthUser }) => {
                 withCredentials: true
             });
             
-            // Save user data to localStorage and update global state
+            // Save user data and token to localStorage and update global state
             localStorage.setItem("user", JSON.stringify(response.data.user));
+            localStorage.setItem("token", response.data.token);
             setAuthUser(response.data.user);
             navigate("/");
         } catch (error) {
