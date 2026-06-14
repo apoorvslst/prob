@@ -59,6 +59,17 @@ const Reels = ({ authUser }) => {
     let url = path.replace(/\\/g, '/');
     if (url.startsWith('public/')) url = url.slice(6);
     if (!url.startsWith('/') && !url.startsWith('http')) url = '/' + url;
+    
+    // Fix existing localhost URLs stored in the DB during local dev
+    if (url.startsWith('http://localhost:8000')) {
+      url = url.replace('http://localhost:8000', '');
+    }
+
+    // If it's a relative path, prefix it with the backend URL
+    if (url.startsWith('/')) {
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+      return baseUrl ? `${baseUrl}${url}` : url;
+    }
     return url;
   };
 

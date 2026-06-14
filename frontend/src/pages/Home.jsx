@@ -11,12 +11,21 @@ const Home = ({ authUser }) => {
   // Helper: normalize legacy disk paths to proper web URLs
   const getPostImageUrl = (path) => {
     if (!path) return '';
-    // Replace backslashes with forward slashes
     let url = path.replace(/\\/g, '/');
-    // Strip leading 'public/' if present
     if (url.startsWith('public/')) url = url.slice(6);
-    // Ensure it starts with /
     if (!url.startsWith('/') && !url.startsWith('http')) url = '/' + url;
+    
+    // Fix existing localhost URLs stored in the DB during local dev
+    if (url.startsWith('http://localhost:8000')) {
+      url = url.replace('http://localhost:8000', '');
+    }
+
+    // If it's a relative path, prefix it with the backend URL
+    if (url.startsWith('/')) {
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+      // Only prefix if baseUrl is defined, otherwise fallback to root
+      return baseUrl ? `${baseUrl}${url}` : url;
+    }
     return url;
   };
 
@@ -109,7 +118,7 @@ const Home = ({ authUser }) => {
                     {/* Post Header */}
                     <div className="flex items-center justify-between mb-3 px-1">
                       <div className="flex items-center gap-2 cursor-pointer">
-                        <img src={post.owner?.profilePic || "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png"} alt="user" className="w-8 h-8 rounded-full object-cover border border-neutral-800" />
+                        <img src={post.owner?.profilePic ? getPostImageUrl(post.owner.profilePic) : "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png"} alt="user" className="w-8 h-8 rounded-full object-cover border border-neutral-800" />
                         <span className="font-semibold text-sm hover:text-neutral-400">{post.owner?.username}</span>
                       </div>
                     </div>
@@ -231,7 +240,7 @@ const Home = ({ authUser }) => {
                   {/* Header */}
                   <div className="flex items-center gap-2 p-4 border-b border-neutral-900">
                     <img
-                      src={activeCommentPost.owner?.profilePic || "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png"}
+                      src={activeCommentPost.owner?.profilePic ? getPostImageUrl(activeCommentPost.owner.profilePic) : "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png"}
                       alt="user"
                       className="w-8 h-8 rounded-full object-cover border border-neutral-800"
                     />
@@ -243,7 +252,7 @@ const Home = ({ authUser }) => {
                     {activeCommentPost.description && (
                       <div className="flex gap-2 text-sm items-start">
                         <img
-                          src={activeCommentPost.owner?.profilePic || "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png"}
+                          src={activeCommentPost.owner?.profilePic ? getPostImageUrl(activeCommentPost.owner.profilePic) : "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png"}
                           alt="user"
                           className="w-6 h-6 rounded-full object-cover border border-neutral-800 mt-0.5"
                         />
@@ -260,7 +269,7 @@ const Home = ({ authUser }) => {
                       activeCommentPost.comments?.map((comment) => (
                         <div key={comment._id} className="flex gap-2 text-sm items-start">
                           <img
-                            src={comment.user?.profilePic || "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png"}
+                            src={comment.user?.profilePic ? getPostImageUrl(comment.user.profilePic) : "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png"}
                             alt="user"
                             className="w-6 h-6 rounded-full object-cover border border-neutral-800 mt-0.5"
                           />
