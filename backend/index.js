@@ -1,8 +1,6 @@
 import dotenv from "dotenv";
 import express from 'express';
 import router from './routes/user.routes.js';
-import path from "path";
-import { fileURLToPath } from "url";
 import postrouter from "./routes/post.routes.js";
 import messagerouter from "./routes/message.routes.js";
 import notificationRouter from "./routes/notification.routes.js";
@@ -191,19 +189,6 @@ connectDB().then(() => {
     })
 });
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-if (process.env.NODE_ENV === "production") {
-    // Serve frontend static files from build output
-    app.use(express.static(path.join(__dirname, "../frontend/dist")));
-    
-    // Catch-all route to serve React's index.html for client-side routing
-    app.use((req, res) => {
-        res.sendFile(path.join(__dirname, "../frontend/dist", "index.html"));
-    });
-} else {
-    app.get('/', (req, res) => {
-        return res.json({ status: "Server is running" });
-    });
-}
+app.get('/', (req, res) => {
+    return res.json({ status: "Server is running" });
+});
