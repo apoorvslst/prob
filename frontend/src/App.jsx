@@ -24,47 +24,33 @@ import { PeerProvider } from './providers/Peer';
 axios.defaults.withCredentials = true;
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
 
+// Axios request interceptor: attach token from localStorage as Authorization header
+axios.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Axios response interceptor: handle 401 (expired/missing token)
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+        window.location.href = "/login";
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 function App() {
   const [authUser, setAuthUser] = useState(JSON.parse(localStorage.getItem("user")) || null);
   const navigate = useNavigate();
-
-  // Axios request interceptor: attach token from localStorage as Authorization header
-  // This is the reliable fallback when cross-origin cookies are blocked by the browser
-  useEffect(() => {
-    const reqInterceptor = axios.interceptors.request.use((config) => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    });
-
-    return () => {
-      axios.interceptors.request.eject(reqInterceptor);
-    };
-  }, []);
-
-  // Axios response interceptor: handle 401 (expired/missing token)
-  useEffect(() => {
-    const resInterceptor = axios.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        if (error.response && error.response.status === 401) {
-          localStorage.removeItem("user");
-          localStorage.removeItem("token");
-          setAuthUser(null);
-          if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
-            navigate("/login");
-          }
-        }
-        return Promise.reject(error);
-      }
-    );
-
-    return () => {
-      axios.interceptors.response.eject(resInterceptor);
-    };
-  }, [navigate]);
   const [socket, setSocket] = useState(null);
   const [onlineUsers, setOnlineUsers] = useState([]);
 
