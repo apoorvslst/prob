@@ -10,7 +10,10 @@ const Video = ({ authUser }) => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        socket.on('joined-room', handleRoomJoined)
+        socket.on('joined-room', handleRoomJoined);
+        return ()=>{
+            socket.off('joined-room', handleRoomJoined);
+        }
     }, [socket]);
 
     const handleRoomJoined = ({ roomId }) => {

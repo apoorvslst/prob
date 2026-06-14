@@ -13,7 +13,7 @@ import Message from './pages/Message';
 import Video from "./pages/Video";
 import Room from "./pages/Room";
 import Sidebar from './components/Sidebar';
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import './App.css'
 import { io } from 'socket.io-client';
 import axios from 'axios';
@@ -24,24 +24,31 @@ import { PeerProvider } from './providers/Peer';
 axios.defaults.withCredentials = true;
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
 
-// Intercept API responses globally to check if the cookie/token is missing or expired (401 Unauthorized)
-axios.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response && error.response.status === 401) {
-      // If 401, it means cookie is missing or invalid.
-      // Clear the state in localStorage and immediately redirect.
-      localStorage.removeItem("user");
-      if (window.location.pathname !== '/login') {
-        window.location.href = "/login";
-      }
-    }
-    return Promise.reject(error);
-  }
-);
-
 function App() {
   const [authUser, setAuthUser] = useState(JSON.parse(localStorage.getItem("user")) || null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response && error.response.status === 401) {
+          // If 401, it means cookie is missing or invalid.
+          // Clear the state in localStorage and immediately redirect.
+          localStorage.removeItem("user");
+          setAuthUser(null);
+          if (window.location.pathname !== '/login') {
+            navigate("/login");
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
+  }, [navigate]);
   const [socket, setSocket] = useState(null);
   const [onlineUsers, setOnlineUsers] = useState([]);
 
@@ -92,39 +99,37 @@ function App() {
   useEffect(() => {
     const publicPaths = ['/login', '/register'];
     if (!authUser && !publicPaths.includes(window.location.pathname)) {
-      window.location.href = "/login";
+      navigate("/login");
     }
-  }, [authUser]);
+  }, [authUser, navigate]);
 
   return (
     <>
-      <Router>
-        <div className="flex min-h-screen bg-black text-white">
-          {/* Only show Sidebar if authUser exists and we aren't on login/register pages */}
-          {authUser && <Sidebar authUser={authUser} />}
+      <div className="flex min-h-screen bg-black text-white">
+        {/* Only show Sidebar if authUser exists and we aren't on login/register pages */}
+        {authUser && <Sidebar authUser={authUser} />}
 
-          <div className="flex-1">
-            <SocketProvider>
-              <PeerProvider>
-                <Routes>
+        <div className="flex-1">
+          <SocketProvider>
+            <PeerProvider>
+              <Routes>
 
-                  <Route path="/" element={<Home authUser={authUser} />} />
-                  <Route path="/login" element={<Login setAuthUser={setAuthUser} />} />
-                  <Route path="/register" element={<Register setAuthUser={setAuthUser} />} />
-                  <Route path="/create" element={<Create />} />
-                  <Route path="/reels" element={<Reels authUser={authUser} />} />
-                  <Route path="/message" element={<Message authUser={authUser} socket={socket} />} />
-                  <Route path="/search" element={<Search authUser={authUser} />} />
-                  <Route path="/video" element={<Video authUser={authUser} />} />
-                  <Route path="/profile/:username" element={<Profile />} />
-                  <Route path="/room/:roomId" element={<Room authUser={authUser} />} />
+                <Route path="/" element={<Home authUser={authUser} />} />
+                <Route path="/login" element={<Login setAuthUser={setAuthUser} />} />
+                <Route path="/register" element={<Register setAuthUser={setAuthUser} />} />
+                <Route path="/create" element={<Create />} />
+                <Route path="/reels" element={<Reels authUser={authUser} />} />
+                <Route path="/message" element={<Message authUser={authUser} socket={socket} />} />
+                <Route path="/search" element={<Search authUser={authUser} />} />
+                <Route path="/video" element={<Video authUser={authUser} />} />
+                <Route path="/profile/:username" element={<Profile />} />
+                <Route path="/room/:roomId" element={<Room authUser={authUser} />} />
 
-                </Routes>
-              </PeerProvider>
-            </SocketProvider>
-          </div>
+              </Routes>
+            </PeerProvider>
+          </SocketProvider>
         </div>
-      </Router>
+      </div>
     </>
   );
 }
