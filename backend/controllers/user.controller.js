@@ -15,9 +15,7 @@ const registerUser = async (req, res) => {
         // Handle profile picture
         let profilePicUrl = "";
         if (profilePicLocalPath) {
-            // In a real app, you'd upload this to Cloudinary/S3 and get a URL.
-            // For local development, we'll use the path relative to the server's static files.
-            profilePicUrl = `http://localhost:8000/uploads/${req.file.filename}`; 
+            profilePicUrl = req.file.path; 
         } else {
             profilePicUrl = "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png"; // Default placeholder
         }

@@ -16,7 +16,7 @@ export const createPost = async (req, res) => {
         const mediaArray = uploadedFiles.map(file => {
             const isVideo = file.mimetype.startsWith('video/');
             return {
-                url: '/uploads/' + file.filename,
+                url: file.path,
                 mediaType: isVideo ? 'video' : 'image'
             };
         });
